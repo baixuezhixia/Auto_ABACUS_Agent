@@ -1,0 +1,15 @@
+INPUT_PARAMETERS
+calculation = relax
+suffix = t1_relax
+basis_type = pw
+stru_file = STRU
+kpoint_file = KPT
+ecutwfc = 80
+scf_thr = 1e-7
+pseudo_dir = ../abacus_data/Pseudopotential
+orbital_dir = ../abacus_data/StandardOrbitals
+out_stru = 1
+smearing_method = gaussian
+smearing_sigma = 0.01
+force_thr_ev = 0.01
+relax_method = bfgs

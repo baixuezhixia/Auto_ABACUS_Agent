@@ -1,0 +1,13 @@
+ AUTO_SET NBANDS to 14
+ ModuleIO::read_rhog  warning : Can't open file /home/yukino/TritonDFT-43C7/agent_rebuild/examples/si_pw/OUT.si_test/si_nscf-CHARGE-DENSITY.restart
+ Charge  warning : Charge is not equal to the number of electrons!
+                 charge before normalized = 8.0000066199898
+                  charge after normalized = 7.99999999999913
+                            startmag_type = 2
+                       charge from rho_at = 3.95377434289291
+                         charge should be = 4
+
+ SETUP ATOMIC RHO FOR SPIN 1
+                 Electron number from rho = 7.99999999999973
+           total electron number from rho = 7.99999999999973
+                                should be = 8

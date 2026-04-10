@@ -1,0 +1,19 @@
+INPUT_PARAMETERS
+suffix t1_scf
+stru_file STRU
+kpoint_file KPT
+pseudo_dir /home/yukino/TritonDFT-43C7/abacus_data/Pseudopotential
+basis_type pw
+calculation scf
+latname fcc
+ecutwfc 60
+ecutrho 480
+scf_thr 1e-9
+scf_nmax 1
+ks_solver cg
+nspin 1
+symmetry 1
+out_level ie
+out_stru 0
+smearing_method fixed
+out_chg 1

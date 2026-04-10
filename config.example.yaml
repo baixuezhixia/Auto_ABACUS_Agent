@@ -1,0 +1,22 @@
+abacus:
+  executable: "abacus"
+  run_mode: "mpirun"  # mpirun or local
+  np: 8
+  pseudo_dir: "../abacus_data/Pseudopotential"
+  orb_dir: "../abacus_data/StandardOrbitals"
+
+defaults:
+  calculation:
+    ecutwfc: 80
+    kmesh: [6, 6, 6]
+    smearing_method: "gaussian"
+    smearing_sigma: 0.01
+    scf_thr: 1e-7
+
+decoder:
+  mode: "llm"   # rule, auto, llm
+  model: "deepseek-reasoner"
+  base_url: "https://api.deepseek.com"   # e.g. https://api.openai.com/v1 or an OpenAI-compatible endpoint
+  api_key: "sk-b3065b9ae4854917ae56cb080553f60b"    # optional; if empty, reads OPENAI_API_KEY from environment
+  temperature: 0.0
+  timeout: 60

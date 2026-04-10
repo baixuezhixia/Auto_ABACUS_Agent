@@ -1,0 +1,5 @@
+ AUTO_SET NBANDS to 14
+ ModuleIO::read_rhog  warning : Can't open file /home/yukino/TritonDFT-43C7/agent_rebuild/runs_retry4/02_relax/OUT.t2_relax/t4_dos-CHARGE-DENSITY.restart
+ Charge  warning : Charge is not equal to the number of electrons!
+                 charge before normalized = 7.99999844772316
+                  charge after normalized = 7.99999999999999

@@ -1,0 +1,22 @@
+ smearing_decision  warning : Fixed occupations,gauss broadening ignored
+ AUTO_SET gaussian_parameter to 0
+ AUTO_SET NBANDS to 14
+                            startmag_type = 2
+                       charge from rho_at = 3.95377
+                         charge should be = 4
+
+ SETUP ATOMIC RHO FOR SPIN 1
+                 Electron number from rho = 8
+           total electron number from rho = 8
+                                should be = 8
+                 charge before normalized = 8
+                  charge after normalized = 8
+ scf  warning : Threshold on eigenvalues was too large.
+                            startmag_type = 2
+                       charge from rho_at = 3.95377434289291
+                         charge should be = 4
+
+ SETUP ATOMIC RHO FOR SPIN 1
+                 Electron number from rho = 7.99999999999997
+           total electron number from rho = 7.99999999999997
+                                should be = 8

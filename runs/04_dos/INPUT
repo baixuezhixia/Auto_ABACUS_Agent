@@ -1,0 +1,16 @@
+INPUT_PARAMETERS
+calculation = nscf
+suffix = t4_dos
+basis_type = pw
+stru_file = STRU
+kpoint_file = KPT
+ecutwfc = 80
+scf_thr = 1e-7
+pseudo_dir = ../abacus_data/Pseudopotential
+orbital_dir = ../abacus_data/StandardOrbitals
+out_stru = 1
+init_chg = file
+out_dos = 1
+dos_emin_ev = -15.0
+dos_emax_ev = 15.0
+dos_edelta_ev = 0.01

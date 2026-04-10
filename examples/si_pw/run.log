@@ -1,0 +1,90 @@
+                                                                                     
+                              ABACUS v3.9.0.26
+
+               Atomic-orbital Based Ab-initio Computation at UStc                    
+
+                     Website: http://abacus.ustc.edu.cn/                             
+               Documentation: https://abacus.deepmodeling.com/                       
+                  Repository: https://github.com/abacusmodeling/abacus-develop       
+                              https://github.com/deepmodeling/abacus-develop         
+                      Commit: bf92c2ddf (Thu Apr 2 14:17:41 2026 +0800)
+
+ Mon Apr  6 12:47:24 2026
+ MAKE THE DIR         : OUT.si_test/
+ RUNNING WITH DEVICE  : CPU / Intel(R) Core(TM) Ultra 9 185H (x1)
+ WARNING: some of potential function is set to zero cause of less than 1e-30.
+ UNIFORM GRID DIM     : 36 * 36 * 36
+ UNIFORM GRID DIM(BIG): 54 * 54 * 54
+ UNIFORM GRID (DENSE) : 54 * 54 * 54
+ DONE(0.0831455  SEC) : SYMMETRY
+ DONE(0.0831509  SEC) : SETUP UNITCELL
+ DONE(0.117697   SEC) : INIT K-POINTS
+ ---------------------------------------------------------
+ Self-consistent calculations for electrons
+ ---------------------------------------------------------
+ SPIN    KPOINTS         PROCESSORS  THREADS     
+ 1       1               1           22          
+ ---------------------------------------------------------
+ Use plane wave basis
+ ---------------------------------------------------------
+ ELEMENT NATOM       XC          
+ Si      2           
+ ---------------------------------------------------------
+ Initial plane wave basis and FFT box
+ ---------------------------------------------------------
+ DONE(0.145781   SEC) : INIT PLANEWAVE
+ START CHARGE      : atomic
+ DONE(2.82638    SEC) : LOCAL POTENTIAL
+ DONE(2.88847    SEC) : NON-LOCAL POTENTIAL
+ MEMORY FOR PSI (MB)  : 0.450531
+ WARNING: init_wfc = atomic requires atomic pseudo wavefunctions(PP_PSWFC),
+ but none available. Automatically switch to random initialization.
+ DONE(2.88873    SEC) : INIT BASIS
+
+ ================================================================
+ SELF-CONSISTENT: 
+ ================================================================
+ DONE(87.2419    SEC) : INIT SCF
+ ITER       ETOT/eV          EDIFF/eV         DRHO     TIME/s
+ CG1     -1.97151089e+02   0.00000000e+00   3.1245e-01 390.28
+ !!SCF IS NOT CONVERGED!!
+
+TIME STATISTICS
+-----------------------------------------------------------------
+   CLASS_NAME          NAME        TIME/s  CALLS   AVG/s  PER/%  
+-----------------------------------------------------------------
+                 total             484.08 17       28.48  100.00 
+ Driver          atomic_world      484.08 1        484.08 100.00 
+ Charge          atomic_rho        6.16   2        3.08   1.27   
+ PW_Basis_Sup    recip2real        54.36  19       2.86   11.23  
+ Relax_Driver    relax_driver      481.19 1        481.19 99.40  
+ ESolver_KS      runner            481.19 1        481.19 99.40  
+ ESolver_KS_PW   before_scf        84.34  1        84.34  17.42  
+ Potential       init_pot          38.36  1        38.36  7.93   
+ Potential       cal_veff          63.72  2        31.86  13.16  
+ H_Hartree_pw    v_hartree         11.43  2        5.71   2.36   
+ PW_Basis_Sup    real2recip        60.48  21       2.88   12.49  
+ PotXC           cal_veff          52.30  2        26.15  10.80  
+ XC_Functional   v_xc              52.30  2        26.15  10.80  
+ Potential       interpolate_vrs   9.80   2        4.90   2.02   
+ Symmetry_rho    begin             12.40  2        6.20   2.56   
+ PSIPrepare      initialize_psi    40.65  1        40.65  8.40   
+ DiagoIterAssist diag_subspace     40.55  1        40.55  8.38   
+ Operator        hPsi              335.21 96       3.49   69.25  
+ Operator        veff_pw           331.74 96       3.46   68.53  
+ PW_Basis_K      recip2real        187.44 123      1.52   38.72  
+ PW_Basis_K      real2recip        165.25 109      1.52   34.14  
+ ESolver_KS_PW   hamilt2rho_single 340.71 1        340.71 70.38  
+ HSolverPW       solve             333.63 1        333.63 68.92  
+ HSolverPW       solve_psik        306.44 1        306.44 63.30  
+ DiagoCG         diag_once         306.44 1        306.44 63.30  
+ ElecStatePW     psiToRho          27.04  1        27.04  5.59   
+ Charge_Mixing   get_drho          5.71   1        5.71   1.18   
+ ESolver_KS_PW   after_scf         6.55   1        6.55   1.35   
+-----------------------------------------------------------------
+
+
+ START  Time  : Mon Apr  6 12:47:24 2026
+ FINISH Time  : Mon Apr  6 12:55:28 2026
+ TOTAL  Time  : 484
+ SEE INFORMATION IN : OUT.si_test/

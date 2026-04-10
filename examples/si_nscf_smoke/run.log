@@ -1,0 +1,81 @@
+                                                                                     
+                              ABACUS v3.9.0.26
+
+               Atomic-orbital Based Ab-initio Computation at UStc                    
+
+                     Website: http://abacus.ustc.edu.cn/                             
+               Documentation: https://abacus.deepmodeling.com/                       
+                  Repository: https://github.com/abacusmodeling/abacus-develop       
+                              https://github.com/deepmodeling/abacus-develop         
+                      Commit: bf92c2ddf (Thu Apr 2 14:17:41 2026 +0800)
+
+ Mon Apr  6 12:57:18 2026
+ MAKE THE DIR         : OUT.si_nscf/
+ RUNNING WITH DEVICE  : CPU / Intel(R) Core(TM) Ultra 9 185H (x1)
+ WARNING: some of potential function is set to zero cause of less than 1e-30.
+ UNIFORM GRID DIM     : 36 * 36 * 36
+ UNIFORM GRID DIM(BIG): 54 * 54 * 54
+ UNIFORM GRID (DENSE) : 54 * 54 * 54
+ DONE(0.0790857  SEC) : SYMMETRY
+ DONE(0.0790991  SEC) : SETUP UNITCELL
+ DONE(0.113721   SEC) : INIT K-POINTS
+ ---------------------------------------------------------
+ ---------------------------------------------------------
+ SPIN    KPOINTS         PROCESSORS  THREADS     
+ 1       1               1           22          
+ ---------------------------------------------------------
+ Use plane wave basis
+ ---------------------------------------------------------
+ ELEMENT NATOM       XC          
+ Si      2           
+ ---------------------------------------------------------
+ Initial plane wave basis and FFT box
+ ---------------------------------------------------------
+ DONE(0.15085    SEC) : INIT PLANEWAVE
+ START CHARGE      : file
+ DONE(0.17855    SEC) : LOCAL POTENTIAL
+ DONE(0.236557   SEC) : NON-LOCAL POTENTIAL
+ MEMORY FOR PSI (MB)  : 0.450531
+ WARNING: init_wfc = atomic requires atomic pseudo wavefunctions(PP_PSWFC),
+ but none available. Automatically switch to random initialization.
+ DONE(0.236617   SEC) : INIT BASIS
+
+ ================================================================
+ NONSELF-CONSISTENT: 
+ ================================================================
+ DONE(82.2626    SEC) : INIT SCF
+ ITER       ETOT/eV          EDIFF/eV         DRHO     TIME/s
+ CG1     -1.97595702e+02   0.00000000e+00   1.1163e-30 1193.27
+
+TIME STATISTICS
+-------------------------------------------------------------------
+   CLASS_NAME          NAME        TIME/s   CALLS    AVG/s  PER/%  
+-------------------------------------------------------------------
+                 total             1278.04 17       75.18   100.00 
+ Driver          atomic_world      1278.04 1        1278.04 100.00 
+ Relax_Driver    relax_driver      1277.80 1        1277.80 99.98  
+ ESolver_KS      runner            1277.80 1        1277.80 99.98  
+ ESolver_KS_PW   before_scf        82.03   1        82.03   6.42   
+ Potential       init_pot          35.37   1        35.37   2.77   
+ PW_Basis_Sup    recip2real        41.64   16       2.60    3.26   
+ Potential       cal_veff          58.60   2        29.30   4.59   
+ PW_Basis_Sup    real2recip        50.59   19       2.66    3.96   
+ PotXC           cal_veff          46.79   2        23.40   3.66   
+ XC_Functional   v_xc              46.79   2        23.40   3.66   
+ PSIPrepare      initialize_psi    40.98   1        40.98   3.21   
+ DiagoIterAssist diag_subspace     79.96   2        39.98   6.26   
+ Operator        hPsi              1138.63 364      3.13    89.09  
+ Operator        veff_pw           1125.28 364      3.09    88.05  
+ PW_Basis_K      recip2real        571.09  390      1.46    44.68  
+ PW_Basis_K      real2recip        552.65  390      1.42    43.24  
+ ESolver_KS_PW   hamilt2rho_single 1149.50 1        1149.50 89.94  
+ HSolverPW       solve             1144.33 1        1144.33 89.54  
+ HSolverPW       solve_psik        1144.20 1        1144.20 89.53  
+ DiagoCG         diag_once         1105.11 2        552.55  86.47  
+-------------------------------------------------------------------
+
+
+ START  Time  : Mon Apr  6 12:57:18 2026
+ FINISH Time  : Mon Apr  6 13:18:36 2026
+ TOTAL  Time  : 1278
+ SEE INFORMATION IN : OUT.si_nscf/

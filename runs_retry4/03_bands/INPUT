@@ -1,0 +1,21 @@
+INPUT_PARAMETERS
+suffix t3_bands
+stru_file STRU
+kpoint_file KPT
+pseudo_dir /home/yukino/TritonDFT-43C7/abacus_data/Pseudopotential
+basis_type pw
+calculation nscf
+latname fcc
+ecutwfc 60
+ecutrho 480
+scf_thr 1e-9
+scf_nmax 1
+ks_solver cg
+nspin 1
+symmetry 0
+out_level ie
+out_stru 0
+init_chg file
+read_file_dir /home/yukino/TritonDFT-43C7/agent_rebuild/runs_retry4/02_relax/OUT.t2_relax
+out_chg 0
+out_band 1

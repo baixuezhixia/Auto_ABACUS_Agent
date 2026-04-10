@@ -1,0 +1,486 @@
+                                                                                     
+                              ABACUS v3.9.0.26
+
+               Atomic-orbital Based Ab-initio Computation at UStc                    
+
+                     Website: http://abacus.ustc.edu.cn/                             
+               Documentation: https://abacus.deepmodeling.com/                       
+                  Repository: https://github.com/abacusmodeling/abacus-develop       
+                              https://github.com/deepmodeling/abacus-develop         
+                      Commit: bf92c2ddf (Thu Apr 2 14:17:41 2026 +0800)
+
+    Start Time is Thu Apr  9 22:12:37 2026
+                                                                                     
+ ------------------------------------------------------------------------------------
+
+ READING GENERAL INFORMATION
+                           global_out_dir = OUT.t3_bands/
+                           global_in_card = INPUT
+                               pseudo_dir = /home/yukino/TritonDFT-43C7/abacus_data/Pseudopotential/
+                              orbital_dir = 
+                                    DRANK = 1
+                                    DSIZE = 8
+                                   DCOLOR = 1
+                                    GRANK = 1
+                                    GSIZE = 1
+
+
+ >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+ |                                                                    |
+ |                        #Setup Unitcell#                            |
+ | From the input file and the structure file we know the number of   |
+ | different elments in this unitcell, then we list the detail        |
+ | information for each element, especially the zeta and polar atomic |
+ | orbital number for each element. The total atom number is counted. |
+ | We calculate the nearest atom distance for each atom and show the  |
+ | Cartesian and Direct coordinates for each atom. We list the file   |
+ | address for atomic orbitals. The volume and the lattice vectors    |
+ | in real and reciprocal space is also shown.                        |
+ |                                                                    |
+ <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+ READING UNITCELL INFORMATION
+                       Number of elements = 1
+                  Lattice constant (Bohr) = 10.2635
+              Lattice constant (Angstrom) = 5.4312
+
+ READING ATOM TYPE 1
+                               Atom label = Si
+                      L=0, number of zeta = 1
+                      L=1, number of zeta = 1
+                      L=2, number of zeta = 1
+            Number of atoms for this type = 2
+
+                        TOTAL ATOM NUMBER = 2
+
+ DIRECT COORDINATES
+ atom                  x                  y                  z     mag
+   Si     0.000000000000     0.000000000000     0.000000000000  0.0000
+   Si     0.250000000000     0.250000000000     0.250000000000  0.0000
+
+ ATOMIC VELOCITIES
+ atom                 vx                 vy                 vz
+   Si                  0                  0                  0
+   Si                  0                  0                  0
+
+                     Cell volume (Bohr^3) = 270.287
+                        Cell volume (A^3) = 40.0524
+
+ Lattice vectors: (Cartesian coordinate: in unit of a_0)
+                 -0.5                  +0                +0.5
+                   +0                +0.5                +0.5
+                 -0.5                +0.5                  +0
+ Reciprocal vectors: (Cartesian coordinate: in unit of 2 pi/a_0)
+                   -1                  -1                  +1
+                   +1                  +1                  +1
+                   -1                  +1                  -1
+
+ #ENERGY SOLVER# ksdft_pw
+ RUNNING WITH DEVICE  : CPU / Intel(R) Core(TM) Ultra 9 185H (x1)
+
+
+ >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+ |                                                                    |
+ |                 #Read Pseudopotentials Files#                      |
+ | ABACUS supports norm-conserving (NC) pseudopotentials for both     |
+ | plane wave basis and numerical atomic orbital basis sets.          |
+ | In addition, ABACUS supports ultrasoft pseudopotentials (USPP)     |
+ | for plane wave basis set.                                          |
+ |                                                                    |
+ <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+                PAO radial cut off (Bohr) = 15
+                     Pseudopotential file = Si_ONCV_PBE-1.0.upf
+                     Pseudopotential type = NC
+          Exchange-correlation functional = PBE
+                 Nonlocal core correction = 0
+                        Valence electrons = 4
+                                     Lmax = 1
+                           Number of zeta = 0
+                     Number of projectors = 4
+                           L of projector = 0
+                           L of projector = 0
+                           L of projector = 1
+                           L of projector = 1
+         Number of pseudo atomic orbitals = 0
+            Electron number of element Si = 4
+      Total electron number of element Si = 8
+          Autoset the number of electrons = 8
+               Occupied electronic states = 4
+     Number of electronic states (NBANDS) = 14
+
+
+ >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+ |                                                                    |
+ |           #Setup Plane Waves of Charge/Potential#                  |
+ | Use the kinetic energy cutoff and the lattice vectors to generate  |
+ | the dimensions of FFT grid, which is used to represent the charge  |
+ | density or potential. If USPP is used, a double grid technique     |
+ | is applied.                                                        |
+ |                                                                    |
+ <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+ SETUP PLANE WAVES FOR CHARGE/POTENTIAL
+  Energy cutoff for charge/potential (Ry) = 240
+            FFT grid for charge/potential = [ 36, 36, 36 ]
+           Number of FFT grids this proc. = 6480
+                Division for big FFT grid = [ 1, 1, 1 ]
+      FFT (big) grid for charge/potential = [ 54, 54, 54 ]
+     Number of FFT (big) grids this proc. = 20412
+                    Number of plane waves = 16889
+        Number of sticks on FFT x-y plane = 859
+
+ PARALLEL PW FOR CHARGE/POTENTIAL
+     PROC   COLUMNS(POT)             PW
+        1            107           2111
+        2            107           2111
+        3            108           2113
+        4            108           2113
+        5            107           2110
+        6            107           2110
+        7            107           2110
+        8            108           2111
+ --------------- SUM -------------------
+        8            859          16889
+
+                            Number of |g| = 206
+                                  Max |g| = 640
+                                  Min |g| = 3
+
+
+
+ energy cutoff for dense charge/potential (unit:Ry) = 480
+      fft grid for dense charge/potential = [ 54, 54, 54 ]
+                                     nrxx = 20412
+
+ SETUP PLANE WAVES FOR DENSE CHARGE/POTENTIAL
+                    Number of plane waves = 47855
+                         Number of sticks = 1735
+
+ PARALLEL PW FOR dense CHARGE/POTENTIAL
+     PROC   COLUMNS(POT)             PW
+        1            217           5983
+        2            217           5983
+        3            217           5982
+        4            217           5982
+        5            217           5982
+        6            217           5982
+        7            217           5982
+        8            216           5979
+ --------------- sum -------------------
+        8           1735          47855
+                            number of |g| = 420
+                                  max |g| = 1280
+                                  min |g| = 3
+ DONE : SETUP UNITCELL Time : 0.0337591 (SEC)
+
+
+ >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+ |                                                                    |
+ |                       #Setup K-points#                             |
+ | We setup the k-points according to input parameters.               |
+ | The reduced k-points are set according to symmetry operations.     |
+ | We treat the spin as another set of k-points.                      |
+ |                                                                    |
+ <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+ SETUP K-POINTS
+                                    nspin = 1
+                                   nkstot = 61
+ K-POINTS DIRECT COORDINATES
+ KPOINTS    DIRECT_X    DIRECT_Y    DIRECT_Z  WEIGHT
+       1  0.00000000  0.00000000  0.00000000  1.0000
+       2  0.02500000  0.00000000  0.00000000  1.0000
+       3  0.05000000  0.00000000  0.00000000  1.0000
+       4  0.07500000  0.00000000  0.00000000  1.0000
+       5  0.10000000  0.00000000  0.00000000  1.0000
+       6  0.12500000  0.00000000  0.00000000  1.0000
+       7  0.15000000  0.00000000  0.00000000  1.0000
+       8  0.17500000  0.00000000  0.00000000  1.0000
+       9  0.20000000  0.00000000  0.00000000  1.0000
+      10  0.22500000  0.00000000  0.00000000  1.0000
+      11  0.25000000  0.00000000  0.00000000  1.0000
+      12  0.27500000  0.00000000  0.00000000  1.0000
+      13  0.30000000  0.00000000  0.00000000  1.0000
+      14  0.32500000  0.00000000  0.00000000  1.0000
+      15  0.35000000  0.00000000  0.00000000  1.0000
+      16  0.37500000  0.00000000  0.00000000  1.0000
+      17  0.40000000  0.00000000  0.00000000  1.0000
+      18  0.42500000  0.00000000  0.00000000  1.0000
+      19  0.45000000  0.00000000  0.00000000  1.0000
+      20  0.47500000  0.00000000  0.00000000  1.0000
+      21  0.50000000  0.00000000  0.00000000  1.0000
+      22  0.50000000  0.02500000  0.00000000  1.0000
+      23  0.50000000  0.05000000  0.00000000  1.0000
+      24  0.50000000  0.07500000  0.00000000  1.0000
+      25  0.50000000  0.10000000  0.00000000  1.0000
+      26  0.50000000  0.12500000  0.00000000  1.0000
+      27  0.50000000  0.15000000  0.00000000  1.0000
+      28  0.50000000  0.17500000  0.00000000  1.0000
+      29  0.50000000  0.20000000  0.00000000  1.0000
+      30  0.50000000  0.22500000  0.00000000  1.0000
+      31  0.50000000  0.25000000  0.00000000  1.0000
+      32  0.50000000  0.27500000  0.00000000  1.0000
+      33  0.50000000  0.30000000  0.00000000  1.0000
+      34  0.50000000  0.32500000  0.00000000  1.0000
+      35  0.50000000  0.35000000  0.00000000  1.0000
+      36  0.50000000  0.37500000  0.00000000  1.0000
+      37  0.50000000  0.40000000  0.00000000  1.0000
+      38  0.50000000  0.42500000  0.00000000  1.0000
+      39  0.50000000  0.45000000  0.00000000  1.0000
+      40  0.50000000  0.47500000  0.00000000  1.0000
+      41  0.50000000  0.50000000  0.00000000  1.0000
+      42  0.47500000  0.47500000  0.00000000  1.0000
+      43  0.45000000  0.45000000  0.00000000  1.0000
+      44  0.42500000  0.42500000  0.00000000  1.0000
+      45  0.40000000  0.40000000  0.00000000  1.0000
+      46  0.37500000  0.37500000  0.00000000  1.0000
+      47  0.35000000  0.35000000  0.00000000  1.0000
+      48  0.32500000  0.32500000  0.00000000  1.0000
+      49  0.30000000  0.30000000  0.00000000  1.0000
+      50  0.27500000  0.27500000  0.00000000  1.0000
+      51  0.25000000  0.25000000  0.00000000  1.0000
+      52  0.22500000  0.22500000  0.00000000  1.0000
+      53  0.20000000  0.20000000  0.00000000  1.0000
+      54  0.17500000  0.17500000  0.00000000  1.0000
+      55  0.15000000  0.15000000  0.00000000  1.0000
+      56  0.12500000  0.12500000  0.00000000  1.0000
+      57  0.10000000  0.10000000  0.00000000  1.0000
+      58  0.07500000  0.07500000  0.00000000  1.0000
+      59  0.05000000  0.05000000  0.00000000  1.0000
+      60  0.02500000  0.02500000  0.00000000  1.0000
+      61  0.00000000  0.00000000  0.00000000  1.0000
+
+
+       Number of k-points in this process = 61
+       Minimum distributed k-point number = 61
+
+ K-POINTS CARTESIAN COORDINATES
+ KPOINTS CARTESIAN_X CARTESIAN_Y CARTESIAN_Z  WEIGHT
+       1  0.00000000  0.00000000  0.00000000  0.0328
+       2 -0.02500000 -0.02500000  0.02500000  0.0328
+       3 -0.05000000 -0.05000000  0.05000000  0.0328
+       4 -0.07500000 -0.07500000  0.07500000  0.0328
+       5 -0.10000000 -0.10000000  0.10000000  0.0328
+       6 -0.12500000 -0.12500000  0.12500000  0.0328
+       7 -0.15000000 -0.15000000  0.15000000  0.0328
+       8 -0.17500000 -0.17500000  0.17500000  0.0328
+       9 -0.20000000 -0.20000000  0.20000000  0.0328
+      10 -0.22500000 -0.22500000  0.22500000  0.0328
+      11 -0.25000000 -0.25000000  0.25000000  0.0328
+      12 -0.27500000 -0.27500000  0.27500000  0.0328
+      13 -0.30000000 -0.30000000  0.30000000  0.0328
+      14 -0.32500000 -0.32500000  0.32500000  0.0328
+      15 -0.35000000 -0.35000000  0.35000000  0.0328
+      16 -0.37500000 -0.37500000  0.37500000  0.0328
+      17 -0.40000000 -0.40000000  0.40000000  0.0328
+      18 -0.42500000 -0.42500000  0.42500000  0.0328
+      19 -0.45000000 -0.45000000  0.45000000  0.0328
+      20 -0.47500000 -0.47500000  0.47500000  0.0328
+      21 -0.50000000 -0.50000000  0.50000000  0.0328
+      22 -0.47500000 -0.47500000  0.52500000  0.0328
+      23 -0.45000000 -0.45000000  0.55000000  0.0328
+      24 -0.42500000 -0.42500000  0.57500000  0.0328
+      25 -0.40000000 -0.40000000  0.60000000  0.0328
+      26 -0.37500000 -0.37500000  0.62500000  0.0328
+      27 -0.35000000 -0.35000000  0.65000000  0.0328
+      28 -0.32500000 -0.32500000  0.67500000  0.0328
+      29 -0.30000000 -0.30000000  0.70000000  0.0328
+      30 -0.27500000 -0.27500000  0.72500000  0.0328
+      31 -0.25000000 -0.25000000  0.75000000  0.0328
+      32 -0.22500000 -0.22500000  0.77500000  0.0328
+      33 -0.20000000 -0.20000000  0.80000000  0.0328
+      34 -0.17500000 -0.17500000  0.82500000  0.0328
+      35 -0.15000000 -0.15000000  0.85000000  0.0328
+      36 -0.12500000 -0.12500000  0.87500000  0.0328
+      37 -0.10000000 -0.10000000  0.90000000  0.0328
+      38 -0.07500000 -0.07500000  0.92500000  0.0328
+      39 -0.05000000 -0.05000000  0.95000000  0.0328
+      40 -0.02500000 -0.02500000  0.97500000  0.0328
+      41  0.00000000  0.00000000  1.00000000  0.0328
+      42  0.00000000  0.00000000  0.95000000  0.0328
+      43  0.00000000  0.00000000  0.90000000  0.0328
+      44  0.00000000  0.00000000  0.85000000  0.0328
+      45  0.00000000  0.00000000  0.80000000  0.0328
+      46  0.00000000  0.00000000  0.75000000  0.0328
+      47  0.00000000  0.00000000  0.70000000  0.0328
+      48  0.00000000  0.00000000  0.65000000  0.0328
+      49  0.00000000  0.00000000  0.60000000  0.0328
+      50  0.00000000  0.00000000  0.55000000  0.0328
+      51  0.00000000  0.00000000  0.50000000  0.0328
+      52  0.00000000  0.00000000  0.45000000  0.0328
+      53  0.00000000  0.00000000  0.40000000  0.0328
+      54  0.00000000  0.00000000  0.35000000  0.0328
+      55  0.00000000  0.00000000  0.30000000  0.0328
+      56  0.00000000  0.00000000  0.25000000  0.0328
+      57  0.00000000  0.00000000  0.20000000  0.0328
+      58  0.00000000  0.00000000  0.15000000  0.0328
+      59  0.00000000  0.00000000  0.10000000  0.0328
+      60  0.00000000  0.00000000  0.05000000  0.0328
+      61  0.00000000  0.00000000  0.00000000  0.0328
+
+
+ K-POINTS DIRECT COORDINATES
+ KPOINTS    DIRECT_X    DIRECT_Y    DIRECT_Z  WEIGHT
+       1  0.00000000  0.00000000  0.00000000  0.0328
+       2  0.02500000  0.00000000  0.00000000  0.0328
+       3  0.05000000  0.00000000  0.00000000  0.0328
+       4  0.07500000  0.00000000  0.00000000  0.0328
+       5  0.10000000  0.00000000  0.00000000  0.0328
+       6  0.12500000  0.00000000  0.00000000  0.0328
+       7  0.15000000  0.00000000  0.00000000  0.0328
+       8  0.17500000  0.00000000  0.00000000  0.0328
+       9  0.20000000  0.00000000  0.00000000  0.0328
+      10  0.22500000  0.00000000  0.00000000  0.0328
+      11  0.25000000  0.00000000  0.00000000  0.0328
+      12  0.27500000  0.00000000  0.00000000  0.0328
+      13  0.30000000  0.00000000  0.00000000  0.0328
+      14  0.32500000  0.00000000  0.00000000  0.0328
+      15  0.35000000  0.00000000  0.00000000  0.0328
+      16  0.37500000  0.00000000  0.00000000  0.0328
+      17  0.40000000  0.00000000  0.00000000  0.0328
+      18  0.42500000  0.00000000  0.00000000  0.0328
+      19  0.45000000  0.00000000  0.00000000  0.0328
+      20  0.47500000  0.00000000  0.00000000  0.0328
+      21  0.50000000  0.00000000  0.00000000  0.0328
+      22  0.50000000  0.02500000  0.00000000  0.0328
+      23  0.50000000  0.05000000  0.00000000  0.0328
+      24  0.50000000  0.07500000  0.00000000  0.0328
+      25  0.50000000  0.10000000  0.00000000  0.0328
+      26  0.50000000  0.12500000  0.00000000  0.0328
+      27  0.50000000  0.15000000  0.00000000  0.0328
+      28  0.50000000  0.17500000  0.00000000  0.0328
+      29  0.50000000  0.20000000  0.00000000  0.0328
+      30  0.50000000  0.22500000  0.00000000  0.0328
+      31  0.50000000  0.25000000  0.00000000  0.0328
+      32  0.50000000  0.27500000  0.00000000  0.0328
+      33  0.50000000  0.30000000  0.00000000  0.0328
+      34  0.50000000  0.32500000  0.00000000  0.0328
+      35  0.50000000  0.35000000  0.00000000  0.0328
+      36  0.50000000  0.37500000  0.00000000  0.0328
+      37  0.50000000  0.40000000  0.00000000  0.0328
+      38  0.50000000  0.42500000  0.00000000  0.0328
+      39  0.50000000  0.45000000  0.00000000  0.0328
+      40  0.50000000  0.47500000  0.00000000  0.0328
+      41  0.50000000  0.50000000  0.00000000  0.0328
+      42  0.47500000  0.47500000  0.00000000  0.0328
+      43  0.45000000  0.45000000  0.00000000  0.0328
+      44  0.42500000  0.42500000  0.00000000  0.0328
+      45  0.40000000  0.40000000  0.00000000  0.0328
+      46  0.37500000  0.37500000  0.00000000  0.0328
+      47  0.35000000  0.35000000  0.00000000  0.0328
+      48  0.32500000  0.32500000  0.00000000  0.0328
+      49  0.30000000  0.30000000  0.00000000  0.0328
+      50  0.27500000  0.27500000  0.00000000  0.0328
+      51  0.25000000  0.25000000  0.00000000  0.0328
+      52  0.22500000  0.22500000  0.00000000  0.0328
+      53  0.20000000  0.20000000  0.00000000  0.0328
+      54  0.17500000  0.17500000  0.00000000  0.0328
+      55  0.15000000  0.15000000  0.00000000  0.0328
+      56  0.12500000  0.12500000  0.00000000  0.0328
+      57  0.10000000  0.10000000  0.00000000  0.0328
+      58  0.07500000  0.07500000  0.00000000  0.0328
+      59  0.05000000  0.05000000  0.00000000  0.0328
+      60  0.02500000  0.02500000  0.00000000  0.0328
+      61  0.00000000  0.00000000  0.00000000  0.0328
+
+ DONE : INIT K-POINTS Time : 0.0348403 (SEC)
+
+ XC:	101	130	
+
+ >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+ |                                                                    |
+ | Setup charge mixing parameters                                     |
+ |                                                                    |
+ <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+                              mixing_type = broyden
+                              mixing_beta = 0.8
+                               mixing_gg0 = 1
+                           mixing_gg0_min = 0.1
+                              mixing_ndim = 8
+
+
+ >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+ |                                                                    |
+ |              #Setup Plane Waves of Wave Functions#                 |
+ | Use the kinetic energy cutoff and the lattice vectors to generate  |
+ | the dimensions of FFT grid, which is used to represent the wave    |
+ | functions of electrons.                                            |
+ |                                                                    |
+ <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+ SETUP PLANE WAVES FOR WAVE FUNCTIONS
+     Energy cutoff for wavefunc (unit:Ry) = 60
+              FFT grid for wave functions = [ 36, 36, 36 ]
+              Number of total plane waves = 2685
+        Number of sticks on FFT x-y plane = 253
+
+ PARALLEL PW FOR WAVE FUNCTIONS
+     PROC   COLUMNS(POT)             PW
+        1             32            337
+        2             32            337
+        3             32            337
+        4             31            334
+        5             31            334
+        6             31            334
+        7             32            336
+        8             32            336
+ --------------- sum -------------------
+        8            253           2685
+ DONE : INIT PLANEWAVE Time : 0.0413889 (SEC)
+
+                                 init_chg = file
+ Read electron density from file
+ Find the file /home/yukino/TritonDFT-43C7/agent_rebuild/runs_retry4/02_relax/OUT.t2_relax/chg.cube , try to read it.
+ Read electron density from file: /home/yukino/TritonDFT-43C7/agent_rebuild/runs_retry4/02_relax/OUT.t2_relax/chg.cube
+ DONE : LOCAL POTENTIAL Time : 0.0730684 (SEC)
+
+
+ SETUP NONLOCAL PSEUDOPOTENTIALS IN PLANE WAVE BASIS
+ Si non-local projectors:
+ projector 1 L=0
+ projector 2 L=0
+ projector 3 L=1
+ projector 4 L=1
+      TOTAL NUMBER OF NONLOCAL PROJECTORS = 16
+
+ Init Non-Local PseudoPotential table : 
+ Init Non-Local-Pseudopotential done.
+ DONE : NON-LOCAL POTENTIAL Time : 0.0921376 (SEC)
+
+                                     npwx = 275
+
+ Using RANDOM starting wave functions for all 14 bands
+
+ WARNING:
+ init_wfc = atomic requires atomic pseudo wavefunctions(PP_PSWFC), but none available. 
+ Automatically switch to random initialization.
+ Note: Random starting wavefunctions may slow down convergence.
+      For faster convergence, consider using:
+      1) A pseudopotential file that includes atomic wavefunctions (with PP_PSWFC), or
+      2) Numerical atomic orbitals with 'init_wfc = nao' or 'nao+random' if available.
+
+ DONE : INIT BASIS Time : 0.0922726 (SEC)
+
+ ================================================================
+ NONSELF-CONSISTENT
+ ================================================================
+ DONE : INIT SCF Time : 40.6486 (SEC)
+
+
+ ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ --> #ION MOVE#         1  #ELEC ITER#         1
+ ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ k(1/61) Iter steps (avg)=33 threshold=1.25e-11
+ k(2/61) Iter steps (avg)=33 threshold=1.25e-11
+ k(3/61) Iter steps (avg)=31 threshold=1.25e-11
+ k(4/61) Iter steps (avg)=32 threshold=1.25e-11
+ k(5/61) Iter steps (avg)=32 threshold=1.25e-11
+ k(6/61) Iter steps (avg)=33 threshold=1.25e-11
+ k(7/61) Iter steps (avg)=32 threshold=1.25e-11
+ k(8/61) Iter steps (avg)=30 threshold=1.25e-11
+ k(9/61) Iter steps (avg)=32 threshold=1.25e-11
+ k(10/61) Iter steps (avg)=32 threshold=1.25e-11
+ k(11/61) Iter steps (avg)=30 threshold=1.25e-11

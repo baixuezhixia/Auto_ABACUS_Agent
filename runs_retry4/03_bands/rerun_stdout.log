@@ -1,0 +1,45 @@
+                                                                                     
+                              ABACUS v3.9.0.26
+
+               Atomic-orbital Based Ab-initio Computation at UStc                    
+
+                     Website: http://abacus.ustc.edu.cn/                             
+               Documentation: https://abacus.deepmodeling.com/                       
+                  Repository: https://github.com/abacusmodeling/abacus-develop       
+                              https://github.com/deepmodeling/abacus-develop         
+                      Commit: bf92c2ddf (Thu Apr 2 14:17:41 2026 +0800)
+
+ Thu Apr  9 22:12:37 2026
+ MAKE THE DIR         : OUT.t3_bands/
+ RUNNING WITH DEVICE  : CPU / Intel(R) Core(TM) Ultra 9 185H (x1)
+ WARNING: some of potential function is set to zero cause of less than 1e-30.
+ UNIFORM GRID DIM     : 36 * 36 * 36
+ UNIFORM GRID DIM(BIG): 54 * 54 * 54
+ UNIFORM GRID (DENSE) : 54 * 54 * 54
+ DONE(0.0338088  SEC) : SETUP UNITCELL
+ DONE(0.0348475  SEC) : INIT K-POINTS
+ ---------------------------------------------------------
+ ---------------------------------------------------------
+ SPIN    KPOINTS         PROCESSORS  THREADS     
+ 1       61              8           16          
+ ---------------------------------------------------------
+ Use plane wave basis
+ ---------------------------------------------------------
+ ELEMENT NATOM       XC          
+ Si      2           
+ ---------------------------------------------------------
+ Initial plane wave basis and FFT box
+ ---------------------------------------------------------
+ DONE(0.0414503  SEC) : INIT PLANEWAVE
+ START CHARGE      : file
+ DONE(0.0731162  SEC) : LOCAL POTENTIAL
+ DONE(0.0921589  SEC) : NON-LOCAL POTENTIAL
+ MEMORY FOR PSI (MB)  : 3.58353
+ WARNING: init_wfc = atomic requires atomic pseudo wavefunctions(PP_PSWFC),
+ but none available. Automatically switch to random initialization.
+ DONE(0.0922756  SEC) : INIT BASIS
+
+ ================================================================
+ NONSELF-CONSISTENT: 
+ ================================================================
+ DONE(40.6487    SEC) : INIT SCF
