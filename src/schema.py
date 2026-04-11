@@ -1,7 +1,4 @@
-#定义数据结构。比如一个任务是什么、执行结果是什么、
-#整次 pipeline 结果是什么，都在这里统一成 dataclass
-
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
@@ -39,9 +36,22 @@ class ExecutionResult:
 
 
 @dataclass
+class StructureArtifact:
+    source: str
+    input: str
+    material_id: str
+    formula: str
+    cif_path: str
+    lattice_type: str
+    candidates: List[Dict[str, Any]] = field(default_factory=list)
+
+
+@dataclass
 class PipelineResult:
     query: str
     tasks: List[CalcTask]
     execution: List[ExecutionResult]
     summary: str
     report_path: Optional[str] = None
+    structure_artifact: Optional[StructureArtifact] = None
+    notices: List[str] = field(default_factory=list)

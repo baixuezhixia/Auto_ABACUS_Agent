@@ -1,10 +1,8 @@
-#LLM 版 task_decoder。
-#它调用 OpenAI 兼容接口，让模型直接输出 JSON 任务列表，然后转换成内部任务结构
-
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import json
 import os
+import socket
 import urllib.error
 import urllib.request
 from typing import Any, Dict, List
@@ -31,11 +29,14 @@ def _build_payload(query: str, decoder_cfg: Dict[str, Any]) -> Dict[str, Any]:
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": query},
     ]
-    return {
+    payload = {
         "model": model,
         "temperature": temperature,
         "messages": messages,
     }
+    if "max_tokens" in decoder_cfg:
+        payload["max_tokens"] = int(decoder_cfg["max_tokens"])
+    return payload
 
 
 def _default_system_prompt() -> str:
@@ -80,6 +81,7 @@ def _call_openai_compatible_api(payload: Dict[str, Any], decoder_cfg: Dict[str, 
     body = json.dumps(payload).encode("utf-8")
     request = urllib.request.Request(url, data=body, headers=headers, method="POST")
     timeout = float(decoder_cfg.get("timeout", 60.0))
+    model = str(decoder_cfg.get("model") or payload.get("model") or "unknown")
 
     try:
         with urllib.request.urlopen(request, timeout=timeout) as response:
@@ -87,6 +89,19 @@ def _call_openai_compatible_api(payload: Dict[str, Any], decoder_cfg: Dict[str, 
     except urllib.error.HTTPError as exc:
         details = exc.read().decode("utf-8", errors="ignore") if exc.fp else ""
         raise RuntimeError(f"LLM decoder HTTP error {exc.code}: {details or exc.reason}") from exc
+    except (TimeoutError, socket.timeout) as exc:
+        raise RuntimeError(
+            f"LLM decoder timed out after {timeout:.0f}s while waiting for model '{model}' at {url}. "
+            "Increase decoder.timeout or use a faster model."
+        ) from exc
+    except urllib.error.URLError as exc:
+        reason = getattr(exc, "reason", exc)
+        if isinstance(reason, socket.timeout):
+            raise RuntimeError(
+                f"LLM decoder timed out after {timeout:.0f}s while waiting for model '{model}' at {url}. "
+                "Increase decoder.timeout or use a faster model."
+            ) from exc
+        raise
 
     choices = data.get("choices") or []
     if not choices:

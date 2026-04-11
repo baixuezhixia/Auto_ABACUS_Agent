@@ -1,6 +1,4 @@
-# ABACUS 结果解析器，负责从 ABACUS 输出中提取关键信息
-#
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import re
 from pathlib import Path
@@ -9,8 +7,8 @@ from typing import Any, Dict
 from schema import TaskType
 
 
-def parse_abacus_result(task_type: TaskType, task_dir: Path) -> Dict[str, Any]:
-    out_dir = task_dir / "OUT.ABACUS"
+def parse_abacus_result(task_type: TaskType, task_dir: Path, task_id: str) -> Dict[str, Any]:
+    out_dir = task_dir / f"OUT.{task_id}"
     text = _load_running_log(out_dir)
 
     result: Dict[str, Any] = {
@@ -68,5 +66,4 @@ def _find_last_float(text: str, pattern: str):
 
 
 def _find_band_gap(text: str):
-    gap = _find_last_float(text, r"band\s+gap[^=]*=\s*([-+]?\d+\.?\d*(?:[Ee][-+]?\d+)?)")
-    return gap
+    return _find_last_float(text, r"band\s+gap[^=]*=\s*([-+]?\d+\.?\d*(?:[Ee][-+]?\d+)?)")

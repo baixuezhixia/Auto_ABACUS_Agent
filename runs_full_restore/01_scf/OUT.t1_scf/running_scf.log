@@ -1,0 +1,70 @@
+                                                                                     
+                              ABACUS v3.9.0.26
+
+               Atomic-orbital Based Ab-initio Computation at UStc                    
+
+                     Website: http://abacus.ustc.edu.cn/                             
+               Documentation: https://abacus.deepmodeling.com/                       
+                  Repository: https://github.com/abacusmodeling/abacus-develop       
+                              https://github.com/deepmodeling/abacus-develop         
+                      Commit: bf92c2ddf (Thu Apr 2 14:17:41 2026 +0800)
+
+    Start Time is Sat Apr 11 15:26:40 2026
+                                                                                     
+ ------------------------------------------------------------------------------------
+
+ READING GENERAL INFORMATION
+                           global_out_dir = OUT.t1_scf/
+                           global_in_card = INPUT
+                               pseudo_dir = \\wsl.localhost\Ubuntu-20.04\home\yukino\TritonDFT-43C7\abacus_data\Pseudopotential/
+                              orbital_dir = 
+                                    DRANK = 1
+                                    DSIZE = 8
+                                   DCOLOR = 1
+                                    GRANK = 1
+                                    GSIZE = 1
+
+
+ >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+ |                                                                    |
+ |                        #Setup Unitcell#                            |
+ | From the input file and the structure file we know the number of   |
+ | different elments in this unitcell, then we list the detail        |
+ | information for each element, especially the zeta and polar atomic |
+ | orbital number for each element. The total atom number is counted. |
+ | We calculate the nearest atom distance for each atom and show the  |
+ | Cartesian and Direct coordinates for each atom. We list the file   |
+ | address for atomic orbitals. The volume and the lattice vectors    |
+ | in real and reciprocal space is also shown.                        |
+ |                                                                    |
+ <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+ READING UNITCELL INFORMATION
+                       Number of elements = 1
+                  Lattice constant (Bohr) = 1.88973
+              Lattice constant (Angstrom) = 1
+ ---------------------------------------------------------
+                         !NOTICE!                         
+ ---------------------------------------------------------
+
+ do not use LATTICE_VECTORS along with explicit specification of lattice type
+ CHECK IN FILE : OUT.t1_scf/warning.log
+
+ For detailed manual of ABACUS, please see the website
+ https://abacus.deepmodeling.com
+ For any questions, propose issues on the website
+ https://github.com/deepmodeling/abacus-develop/issues
+ ---------------------------------------------------------
+                         NOTICE                           
+ ---------------------------------------------------------
+ Check in file : OUT.t1_scf/warning.log
+
+TIME STATISTICS
+-----------------------------------------------------
+ CLASS_NAME    NAME    TIME/s  CALLS   AVG/s  PER/%  
+-----------------------------------------------------
+            total      0.01   1        0.01   100.00 
+ Driver     reading    0.01   1        0.01   86.26  
+ Input_Conv Convert    0.00   1        0.00   3.20   
+-----------------------------------------------------
+

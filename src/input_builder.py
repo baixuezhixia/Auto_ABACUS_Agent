@@ -1,12 +1,10 @@
-#把一个任务变成 ABACUS 需要的 INPUT、STRU、KPT 三个文件
-
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
 
-from schema import CalcTask, TaskType
 from resource_manager import resolve_orbital_map, resolve_pseudo_map
+from schema import CalcTask, TaskType
 
 
 def build_task_inputs(
@@ -47,7 +45,6 @@ def build_task_inputs(
     is_followup = task.task_type in {TaskType.BANDS, TaskType.DOS}
     init_chg = "file" if is_followup else "atomic"
     if task.task_type == TaskType.BANDS:
-        # Line-mode k-paths require symmetry off in ABACUS.
         symmetry = 0
     read_file_dir = None
     if dependency_task_dir is not None and dependency_task_id and is_followup:
@@ -66,7 +63,6 @@ def build_task_inputs(
         f"pseudo_dir {pseudo_dir}",
         "basis_type pw",
         f"calculation {calculation}",
-        f"latname {latname}",
         f"ecutwfc {ecut}",
         f"ecutrho {ecutrho}",
         f"scf_thr {scf_thr}",
@@ -77,11 +73,11 @@ def build_task_inputs(
         f"out_level {out_level}",
         f"out_stru {out_stru}",
     ]
+    if "LATTICE_VECTORS" not in structure_text.upper():
+        input_lines.append(f"latname {latname}")
 
     if task.task_type in {TaskType.SCF, TaskType.RELAX}:
-        input_lines.extend([
-            f"smearing_method {smearing_method}",
-        ])
+        input_lines.append(f"smearing_method {smearing_method}")
         if smearing_method != "fixed":
             input_lines.append(f"smearing_sigma {smearing_sigma}")
         input_lines.append("out_chg 1")
@@ -144,7 +140,6 @@ def _abacus_calculation(task_type: TaskType) -> str:
     if task_type == TaskType.DOS:
         return "nscf"
     if task_type == TaskType.ELASTIC:
-        # Placeholder: elastic needs strain loop + postproc, not a single ABACUS mode.
         return "scf"
     return "scf"
 
@@ -155,13 +150,6 @@ def _build_kpt_content(kmesh, kpath, task_type: TaskType) -> str:
         for point in kpath:
             lines.append(f"{point[0]} {point[1]} {point[2]} {point[3]}")
         return "\n".join(lines) + "\n"
-
-    if task_type == TaskType.DOS:
-        return f"""K_POINTS
-0
-Gamma
-{kmesh[0]} {kmesh[1]} {kmesh[2]} 0 0 0
-"""
 
     return f"""K_POINTS
 0
@@ -190,7 +178,7 @@ def _extract_species(structure_text: str) -> List[str]:
             in_species = True
             continue
         if in_species:
-            if line.upper().startswith(("LATTICE", "ATOMIC_POSITIONS", "CELL_PARAMETERS", "K_POINTS")):
+            if line.upper().startswith(("LATTICE", "ATOMIC_POSITIONS", "CELL_PARAMETERS", "K_POINTS", "NUMERICAL_ORBITAL")):
                 break
             parts = line.split()
             if parts:
@@ -210,6 +198,7 @@ def _render_stru(
     lines = structure_text.splitlines()
     output: List[str] = []
     in_species = False
+    skip_orbital_block = False
     for raw_line in lines:
         line = raw_line.rstrip()
         stripped = line.strip()
@@ -217,8 +206,19 @@ def _render_stru(
             in_species = True
             output.append(line)
             continue
-        if in_species:
+        if stripped.upper().startswith("NUMERICAL_ORBITAL") and not include_numerical_orbital:
+            skip_orbital_block = True
+            continue
+        if skip_orbital_block:
             if not stripped or stripped.upper().startswith(("LATTICE", "ATOMIC_POSITIONS", "CELL_PARAMETERS", "K_POINTS")):
+                skip_orbital_block = False
+                if stripped:
+                    output.append(line)
+                else:
+                    output.append("")
+            continue
+        if in_species:
+            if not stripped or stripped.upper().startswith(("LATTICE", "ATOMIC_POSITIONS", "CELL_PARAMETERS", "K_POINTS", "NUMERICAL_ORBITAL")):
                 in_species = False
                 if stripped:
                     output.append(line)
@@ -236,30 +236,27 @@ def _render_stru(
         output.append("")
         output.append("NUMERICAL_ORBITAL")
         for element in species:
-            orb_name = Path(orb_map[element]).name
-            output.append(orb_name)
+            output.append(Path(orb_map[element]).name)
 
     return "\n".join(output).rstrip() + "\n"
 
 
-def _prepare_read_file_dir(task_id: str, source_out_dir: Path, task_dir: Path) -> Optional[Path]:
+def _prepare_read_file_dir(task_id: str, source_out_dir: Path, task_dir: Path) -> Optional[str]:
     if not source_out_dir.is_dir():
         return None
 
     staging_dir = task_dir / "READ_CHG"
     staging_dir.mkdir(parents=True, exist_ok=True)
 
-    # ABACUS prefers restart file named with the current suffix.
     restart_candidates = sorted(source_out_dir.glob("*-CHARGE-DENSITY.restart"))
     if restart_candidates:
         src = restart_candidates[0]
         dst = staging_dir / f"{task_id}-CHARGE-DENSITY.restart"
         dst.write_bytes(src.read_bytes())
 
-    # Keep cube files as a fallback for init_chg=file.
     for cube_name in ("chg.cube", "chg1.cube", "chg2.cube"):
         cube_path = source_out_dir / cube_name
         if cube_path.is_file():
             (staging_dir / cube_name).write_bytes(cube_path.read_bytes())
 
-    return staging_dir
+    return "READ_CHG"

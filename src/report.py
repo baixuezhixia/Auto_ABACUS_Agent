@@ -1,13 +1,10 @@
-# 报告生成器，把整个 pipeline 的输入输出整理成一个 JSON 文件，
-# 方便后续分析和展示
-
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
-from schema import CalcTask, ExecutionResult
+from schema import CalcTask, ExecutionResult, StructureArtifact
 
 
 def write_report(
@@ -15,11 +12,15 @@ def write_report(
     tasks: List[CalcTask],
     results: List[ExecutionResult],
     output_path: Path,
+    structure_artifact: Optional[StructureArtifact] = None,
+    notices: Optional[List[str]] = None,
 ) -> Path:
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     payload = {
         "query": query,
+        "structure": None,
+        "notices": notices or [],
         "tasks": [
             {
                 "task_id": t.task_id,
@@ -45,5 +46,15 @@ def write_report(
             for r in results
         ],
     }
+    if structure_artifact is not None:
+        payload["structure"] = {
+            "source": structure_artifact.source,
+            "input": structure_artifact.input,
+            "material_id": structure_artifact.material_id,
+            "formula": structure_artifact.formula,
+            "cif_path": structure_artifact.cif_path,
+            "lattice_type": structure_artifact.lattice_type,
+            "candidates": structure_artifact.candidates,
+        }
     output_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
     return output_path

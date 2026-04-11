@@ -1,15 +1,22 @@
-# Agent Rebuild (Isolated)
+﻿# Agent Rebuild (Isolated)
 
-This folder is an isolated prototype for rebuilding the DFT agent, focused on:
+This folder is an isolated prototype for rebuilding the DFT agent.
 
-1. Decode user natural-language scientific questions into concrete calculation tasks.
-2. Execute each task via ABACUS and collect outputs.
+Current workflow:
+
+1. Decode a natural-language scientific query into concrete calculation tasks.
+2. Search Materials Project by formula or material ID.
+3. Select one MP entry with layered filtering: hard rules first, optional LLM ranking second.
+4. Download the selected conventional CIF.
+5. Convert CIF to ABACUS `STRU`.
+6. Generate per-task `INPUT` / `STRU` / `KPT` files.
+7. Run ABACUS tasks in sequence and write `report.json`.
 
 No files outside this folder are modified.
 
 ## What Is Implemented
 
-- Step 2 (Task decoding):
+- Task decoding
   - Rule-based decoder for common task intents:
     - scf
     - relax
@@ -25,26 +32,38 @@ No files outside this folder are modified.
     - the model must return JSON with `tasks[]`
     - if `mode = auto`, rule-based decoding is used as fallback when LLM fails
 
-- Step 3 (ABACUS execution):
-  - Generate per-task ABACUS input folder with INPUT / STRU / KPT.
-  - Resolve species-specific pseudopotentials and orbitals from `abacus_data`.
-  - Run ABACUS per task in sequence.
-  - Chain outputs between tasks when later tasks need previous charge density.
-  - Parse common output metrics and write `report.json`.
+- Materials Project structure acquisition
+  - Search Materials Project by `material_id` like `mp-149` or formula like `Si`
+  - Layered candidate selection:
+    - hard filters: exact formula match, drop deprecated entries, near-hull shortlist
+    - optional LLM ranking on the shortlisted candidates
+  - Record shortlisted candidates, scores, and reasons in `report.json`
+  - Download the selected conventional CIF to `--work-dir/materials_project/`
 
-## Folder Layout
+- CIF to STRU conversion
+  - Parse CIF with `pymatgen`
+  - Reject disordered / partial-occupancy structures
+  - Generate ABACUS `STRU` with explicit `LATTICE_VECTORS`
+  - Resolve pseudopotential filenames from `abacus.pseudo_dir`
 
-- agent_rebuild
-  - src
-    - main.py
-    - pipeline.py
-    - task_decoder.py
-    - input_builder.py
-    - abacus_runner.py
-    - schema.py
-    - report.py
-  - config.example.yaml
-  - requirements.txt
+- ABACUS input generation and execution
+  - Generate one task directory per calculation stage
+  - Write `INPUT`, `STRU`, and `KPT`
+  - Run ABACUS in sequence
+  - Support `abacus.use_hwthread_cpus` and `abacus.oversubscribe`
+
+## Actual Workflow
+
+The current pipeline is:
+
+1. `query` -> task list
+2. `structure` -> MP search
+3. MP candidates -> hard filtering -> optional LLM ranking
+4. selected MP entry -> conventional CIF
+5. CIF -> ABACUS `STRU`
+6. `STRU` + defaults + task type -> per-task `INPUT/KPT/STRU`
+7. ABACUS execution
+8. `report.json`
 
 ## Quick Start
 
@@ -55,138 +74,133 @@ cd agent_rebuild
 pip install -r requirements.txt
 ```
 
-2. Copy config and edit your ABACUS executable/pseudo paths.
+2. Copy config and edit your ABACUS / decoder settings.
 
 ```bash
 cp config.example.yaml config.yaml
 ```
 
-3. Run a full workflow with a structure file.
+3. Set your Materials Project API key.
+
+Preferred YAML form:
+
+```yaml
+MP_API_KEY: "your_materials_project_key"
+```
+
+4. Run the agent.
 
 ```bash
 cd /home/yukino/TritonDFT-43C7/agent_rebuild
 python3 src/main.py \
   --query "计算Si的结构弛豫，随后做能带和DOS" \
-  --structure /home/yukino/TritonDFT-43C7/agent_rebuild/examples/si_pw/STRU \
-  --work-dir ./runs_new \
+  --structure Si \
+  --work-dir ./runs_mp \
   --config config.yaml
 ```
 
-## How To Run
+## Runtime Inputs
 
-The runtime only needs three inputs:
+The runtime currently needs:
 
 - `--query`: the natural-language science question
-- `--structure`: an existing ABACUS `STRU` file
-- `--work-dir`: the output directory for generated inputs and results
-
-For example, with the silicon example shipped in this repo:
-
-```bash
-cd agent_rebuild
-python src/main.py \
-  --query "计算Si的结构弛豫，随后做能带和DOS" \
-  --structure /home/yukino/TritonDFT-43C7/agent_rebuild/examples/si_pw/STRU \
-  --work-dir ./runs \
-  --config config.yaml
-```
+- `--structure`: a Materials Project material ID or formula, for example `mp-149`, `Si`, `SiO2`
+- `--work-dir`: the output directory for generated files and reports
+- `MP_API_KEY`: provided in `config.yaml` or the environment
 
 If you already know the exact task sequence, you can bypass decoding and force the task list:
 
 ```bash
 python src/main.py \
   --query "ignore this text" \
-  --structure /absolute/path/to/STRU \
-  --work-dir ./runs \
+  --structure mp-149 \
+  --work-dir ./runs_mp \
   --config config.yaml \
   --tasks scf,relax,bands,dos
 ```
 
-### Output Layout
+## MP Selection Rule
 
-Each run creates a folder under `--work-dir`, for example:
+If multiple Materials Project entries match, the agent uses two stages:
 
-- `01_scf/`
-- `02_relax/`
-- `03_bands/`
-- `04_dos/`
+- Hard filtering:
+  - exact formula match
+  - non-deprecated entries preferred
+  - near-hull shortlist using `energy_above_hull`
+- Optional LLM ranking:
+  - rank the hard-filtered shortlist with an OpenAI-compatible model
+  - store `llm_score` and `llm_reason` in the report
+
+If LLM ranking is disabled or unavailable, the agent falls back to the rule-ranked candidate.
+
+## Output Layout
+
+Each run currently creates files like these:
+
+- `materials_project/<material_id>.cif`
+- `materials_project/<material_id>.STRU`
+- `01_relax/INPUT`, `01_relax/STRU`, `01_relax/KPT`
+- `02_scf/INPUT`, `02_scf/STRU`, `02_scf/KPT`
+- `...`
 - `report.json`
 
-The report is the best place to check whether each task succeeded and where ABACUS wrote its final output.
+Example:
 
-## Notes
+- `./runs_mp/materials_project/mp-149.cif`
+- `./runs_mp/materials_project/mp-149.STRU`
+- `./runs_mp/01_relax/INPUT`
+- `./runs_mp/report.json`
 
-- This prototype intentionally keeps templates minimal and deterministic.
-- `elastic` is represented as a placeholder workflow hook; actual elastic tensor workflow needs strain set generation and post-processing.
-- This prototype is now step-3 oriented: if you pass `--tasks`, it bypasses decoding entirely.
-- The structure file is not generated by default. It should be an existing ABACUS `STRU` file, or a file you generate in a separate structure-construction step.
+`report.json` includes:
 
-## Step 2 With LLM
+- decoded task plan
+- selected Materials Project structure
+- shortlisted MP candidates
+- LLM scores and reasons when available
+- execution results per task
+- stdout / stderr tails for failed runs
 
-To let LLM do task decoding:
+## LLM Task Decoding
 
-1. Copy `config.example.yaml` to `config.yaml`.
-2. Set:
+To let LLM decode the task graph:
 
 ```yaml
 decoder:
   mode: "llm"
   model: "gpt-4o-mini"
   base_url: "https://api.openai.com/v1"
+  api_key: ""
+  temperature: 0.0
+  timeout: 180
 ```
 
-3. Export `OPENAI_API_KEY` or put `api_key` in `config.yaml`.
-4. Run `python src/main.py --query "..." --structure ... --work-dir ./runs --config config.yaml`
+Export `OPENAI_API_KEY` or put `api_key` in `config.yaml`.
 
-The model must return JSON like this:
+## Configuration Summary
 
-```json
-{
-  "tasks": [
-    {
-      "task_type": "scf",
-      "description": "Run self-consistent electronic structure calculation",
-      "depends_on": [],
-      "params": {}
-    }
-  ]
-}
-```
-
-## Using `abacus_data`
-
-The repository already contains two ready-to-use resource directories:
-
-- `abacus_data/Pseudopotential/` contains UPF pseudopotentials.
-- `abacus_data/StandardOrbitals/` contains ABACUS orbital files.
-
-The prototype uses them like this:
-
-- `pseudo_dir` in `INPUT` points to `abacus_data/Pseudopotential`
-- `orb_dir` in `INPUT` points to `abacus_data/StandardOrbitals`
-- `STRU` should reference filenames that exist in those folders
-
-Example for silicon:
-
-- pseudopotential: `Si_ONCV_PBE-1.0.upf`
-- orbital file: `Si_gga_7au_100Ry_2s2p1d.orb`
-
-So the rule is simple:
-
-1. Extract the chemical species from the structure.
-2. Match each species to the file with the same element prefix.
-3. Let ABACUS read those files through `pseudo_dir` and `orb_dir`.
-
-If you later want to support multiple functional families, keep separate subfolders and switch only the config path.
-
-## Configuration Example
-
-`config.yaml` already points to the local `abacus_data` directories. In normal use you only need to adjust:
+`config.yaml` controls:
 
 - `abacus.executable`
 - `abacus.run_mode`
 - `abacus.np`
+- `abacus.use_hwthread_cpus`
+- `abacus.oversubscribe`
+- `abacus.pseudo_dir`
+- `abacus.orb_dir`
+- `defaults.calculation.*`
 - `decoder.mode`
-- `decoder.base_url` and `decoder.api_key` if you want LLM decoding
+- `decoder.model`
+- `decoder.base_url`
+- `decoder.api_key`
+- `decoder.timeout`
+- `mp_selection.hard_limit`
+- `mp_selection.llm.*`
+- `MP_API_KEY`
 
-For a local, rule-based run you can also set `decoder.mode: "rule"` and avoid calling any LLM.
+## Current Limitations
+
+- The current implementation generates conventional-cell `STRU` from MP CIF by default.
+- `defaults.calculation` is still a fixed default parameter block. It is not yet adapted dynamically from the user's scientific question, material system, or calculation intent.
+- The current task decoder can decide task types and dependencies, but it does not yet synthesize calculation parameters such as `ecutwfc`, `kmesh`, smearing settings, or convergence thresholds from the query.
+- `elastic` is still only represented at the task-planning level; there is no full strain workflow yet.
+- Long production runs may require manual execution and monitoring of ABACUS outside this wrapper.

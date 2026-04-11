@@ -17,6 +17,16 @@ decoder:
   mode: "llm"   # rule, auto, llm
   model: "deepseek-reasoner"
   base_url: "https://api.deepseek.com"   # e.g. https://api.openai.com/v1 or an OpenAI-compatible endpoint
-  api_key: "sk-b3065b9ae4854917ae56cb080553f60b"    # optional; if empty, reads OPENAI_API_KEY from environment
+  api_key: ""
   temperature: 0.0
   timeout: 60
+
+mp_selection:
+  hard_limit: 5
+  llm:
+    enabled: true
+    model: "gpt-4o-mini"
+    base_url: "https://api.openai.com/v1"
+    api_key: ""
+    temperature: 0.0
+    timeout: 60

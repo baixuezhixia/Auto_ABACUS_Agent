@@ -1,7 +1,9 @@
-abacus:
-  executable: "abacus"
+﻿abacus:
+  executable: "/usr/local/bin/abacus"
   run_mode: "mpirun"  # mpirun or local
-  np: 8
+  np: 16
+  use_hwthread_cpus: true
+  oversubscribe: false
   pseudo_dir: "/home/yukino/TritonDFT-43C7/abacus_data/Pseudopotential"
   orb_dir: "/home/yukino/TritonDFT-43C7/abacus_data/StandardOrbitals"
 
@@ -13,7 +15,7 @@ defaults:
     latname: "fcc"
     smearing_method: "fixed"
     scf_thr: 1e-9
-    scf_nmax: 1
+    scf_nmax: 50
     ks_solver: "cg"
     nspin: 1
     symmetry: 1
@@ -28,4 +30,16 @@ decoder:
   base_url: "https://api.deepseek.com"
   api_key: "sk-b3065b9ae4854917ae56cb080553f60b"
   temperature: 0.0
-  timeout: 60
+  timeout: 180
+
+mp_selection:
+  hard_limit: 5
+  llm:
+    enabled: true
+    model: "deepseek-reasoner"
+    base_url: "https://api.deepseek.com"
+    api_key: "sk-b3065b9ae4854917ae56cb080553f60b"
+    temperature: 0.0
+    timeout: 120
+
+MP_API_KEY: "vHFbY1EFbEj0IMvXeI6tyFnc5OY34nMN"
