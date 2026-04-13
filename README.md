@@ -49,6 +49,9 @@ No files outside this folder are modified.
 - ABACUS input generation and execution
   - Generate one task directory per calculation stage
   - Write `INPUT`, `STRU`, and `KPT`
+  - Default to `basis_type = pw`
+  - If the natural-language query explicitly requests `lcao`, generate `basis_type = lcao` and include `NUMERICAL_ORBITAL` in `STRU`
+  - Current `lcao` support is implemented but not yet fully validated in end-to-end production runs
   - Run ABACUS in sequence
   - Support `abacus.use_hwthread_cpus` and `abacus.oversubscribe`
 
@@ -201,6 +204,7 @@ Export `OPENAI_API_KEY` or put `api_key` in `config.yaml`.
 
 - The current implementation generates conventional-cell `STRU` from MP CIF by default.
 - `defaults.calculation` is still a fixed default parameter block. It is not yet adapted dynamically from the user's scientific question, material system, or calculation intent.
-- The current task decoder can decide task types and dependencies, but it does not yet synthesize calculation parameters such as `ecutwfc`, `kmesh`, smearing settings, or convergence thresholds from the query.
+- The current task decoder can decide task types and dependencies, and it can propagate an explicit `lcao` / `pw` basis request from the query. It still does not synthesize most calculation parameters such as `ecutwfc`, `kmesh`, smearing settings, or convergence thresholds from the query.
 - `elastic` is still only represented at the task-planning level; there is no full strain workflow yet.
 - Long production runs may require manual execution and monitoring of ABACUS outside this wrapper.
+- `lcao` input generation is now wired in, but it should still be treated as unverified until it has been exercised on real workflows and compared against expected ABACUS behavior.

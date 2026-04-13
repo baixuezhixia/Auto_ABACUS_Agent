@@ -1,7 +1,8 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import json
 import os
+import re
 import socket
 import urllib.error
 import urllib.request
@@ -11,13 +12,15 @@ from schema import CalcTask, TaskType
 
 
 ALLOWED_TASKS = [t.value for t in TaskType]
+_TOKEN_BOUNDARY = r"[A-Za-z0-9_]"
 
 
 def decode_tasks_with_llm(query: str, decoder_cfg: Dict[str, Any]) -> List[CalcTask]:
     payload = _build_payload(query, decoder_cfg)
     response_text = _call_openai_compatible_api(payload, decoder_cfg)
     parsed = _extract_json(response_text)
-    return _to_tasks(parsed)
+    tasks = _to_tasks(parsed)
+    return _apply_query_hints(query, tasks)
 
 
 def _build_payload(query: str, decoder_cfg: Dict[str, Any]) -> Dict[str, Any]:
@@ -48,6 +51,7 @@ def _default_system_prompt() -> str:
         "- If bands or dos appears, include scf first.\n"
         "- If elastic appears, include relax and scf before it.\n"
         "- depends_on may use either task ids like t1_scf or task types like scf.\n"
+        "- If the query specifies a basis such as lcao or pw, include params.basis_type with that exact value for every task.\n"
         "- Use short Chinese or English descriptions.\n"
         "- Output only JSON, no markdown, no prose.\n"
         "Expected schema:\n"
@@ -186,3 +190,29 @@ def _resolve_dependency(dep: str, task_ids: List[str], task_types: Dict[str, Lis
         )
 
     raise ValueError(f"Task depends on unknown task id or type: {dep_str}")
+
+
+def _apply_query_hints(query: str, tasks: List[CalcTask]) -> List[CalcTask]:
+    basis_type = _detect_basis_type(query)
+    if not basis_type:
+        return tasks
+
+    for task in tasks:
+        task.params.setdefault("basis_type", basis_type)
+    return tasks
+
+
+
+def _contains_token(text: str, token: str) -> bool:
+    pattern = rf"(?<!{_TOKEN_BOUNDARY}){re.escape(token)}(?!{_TOKEN_BOUNDARY})"
+    return re.search(pattern, text, re.IGNORECASE) is not None
+
+
+
+def _detect_basis_type(text: str) -> str | None:
+    lowered = text.lower()
+    if _contains_token(lowered, "lcao"):
+        return "lcao"
+    if _contains_token(lowered, "pw"):
+        return "pw"
+    return None

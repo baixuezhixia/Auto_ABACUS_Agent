@@ -7,6 +7,9 @@ from resource_manager import resolve_orbital_map, resolve_pseudo_map
 from schema import CalcTask, TaskType
 
 
+VALID_BASIS_TYPES = {"pw", "lcao"}
+
+
 def build_task_inputs(
     task: CalcTask,
     task_dir: Path,
@@ -32,16 +35,18 @@ def build_task_inputs(
     nspin = default_cfg.get("nspin", 1)
     symmetry = default_cfg.get("symmetry", 1)
     out_level = default_cfg.get("out_level", "ie")
+    out_stru = default_cfg.get("out_stru", 0)
     relax_force_thr = default_cfg.get("relax_force_thr", 0.01)
     stress_thr = default_cfg.get("stress_thr", 10)
+    basis_type = _resolve_basis_type(task, default_cfg, orb_dir)
+    include_numerical_orbital = basis_type == "lcao"
 
     structure_text = structure_path.read_text(encoding="utf-8")
     species = _extract_species(structure_text)
     pseudo_map = resolve_pseudo_map(species, pseudo_dir)
-    orb_map = resolve_orbital_map(species, orb_dir) if orb_dir else {}
+    orb_map = resolve_orbital_map(species, orb_dir) if include_numerical_orbital else {}
 
     calculation = _abacus_calculation(task.task_type)
-    out_stru = default_cfg.get("out_stru", 0)
     is_followup = task.task_type in {TaskType.BANDS, TaskType.DOS}
     init_chg = "file" if is_followup else "atomic"
     if task.task_type == TaskType.BANDS:
@@ -61,7 +66,7 @@ def build_task_inputs(
         "stru_file STRU",
         "kpoint_file KPT",
         f"pseudo_dir {pseudo_dir}",
-        "basis_type pw",
+        f"basis_type {basis_type}",
         f"calculation {calculation}",
         f"ecutwfc {ecut}",
         f"ecutrho {ecutrho}",
@@ -118,7 +123,7 @@ def build_task_inputs(
         species,
         pseudo_map,
         orb_map,
-        include_numerical_orbital=False,
+        include_numerical_orbital=include_numerical_orbital,
     )
 
     input_path = task_dir / "INPUT"
@@ -128,6 +133,16 @@ def build_task_inputs(
     stru_path.write_text(stru_content, encoding="utf-8")
     kpt_path.write_text(kpt_content, encoding="utf-8")
     return input_path, stru_path, kpt_path
+
+
+def _resolve_basis_type(task: CalcTask, default_cfg: Dict, orb_dir: str) -> str:
+    raw_basis_type = task.params.get("basis_type", default_cfg.get("basis_type", "pw"))
+    basis_type = str(raw_basis_type).strip().lower()
+    if basis_type not in VALID_BASIS_TYPES:
+        raise ValueError(f"Unsupported basis_type '{raw_basis_type}'. Expected one of: {sorted(VALID_BASIS_TYPES)}")
+    if basis_type == "lcao" and not orb_dir:
+        raise ValueError("basis_type 'lcao' requires abacus.orb_dir or abacus.orbital_dir to be configured")
+    return basis_type
 
 
 def _abacus_calculation(task_type: TaskType) -> str:
