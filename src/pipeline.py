@@ -1,5 +1,6 @@
 ﻿from __future__ import annotations
 
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence
 
@@ -24,6 +25,9 @@ def run_pipeline(
     tasks = _resolve_tasks(query, task_plan, decoder_cfg)
     run_root = Path(work_dir).resolve()
     run_root.mkdir(parents=True, exist_ok=True)
+    run_log = run_root / "run.log"
+    _write_run_log(run_log, f"Started pipeline for query: {query}")
+    _write_run_log(run_log, f"Work directory: {run_root}")
 
     structure_artifact, notices = fetch_conventional_cif(
         structure_input=structure_input,
@@ -32,6 +36,7 @@ def run_pipeline(
         selection_cfg=cfg.get("mp_selection", {}),
     )
     notices = list(notices)
+    _write_run_log(run_log, f"Selected structure: {structure_artifact.material_id} ({structure_artifact.formula})")
 
     defaults = cfg.get("defaults", {}).get("calculation", {})
     abacus_cfg = cfg.get("abacus", {})
@@ -52,12 +57,19 @@ def run_pipeline(
         include_numerical_orbital=False,
     )
     notices.append(f"Generated ABACUS STRU from CIF: {generated_stru}")
+    _write_run_log(run_log, f"Generated ABACUS STRU: {generated_stru}")
 
     execution_results: List[ExecutionResult] = []
     task_dirs_by_id: Dict[str, Path] = {}
     structure_paths_by_id: Dict[str, Path] = {}
     for idx, task in enumerate(tasks, start=1):
         task_dir = run_root / f"{idx:02d}_{task.task_type.value}"
+        task_dir.mkdir(parents=True, exist_ok=True)
+        task_log = task_dir / "run.log"
+        _write_run_log(run_log, f"Starting {task.task_id} ({task.task_type.value}) in {task_dir}")
+        _write_run_log(task_log, f"Preparing {task.task_id} ({task.task_type.value})")
+        _write_run_log(task_log, f"Depends on: {task.depends_on or 'none'}")
+
         dependency_task_id = task.depends_on[-1] if task.depends_on else None
         dependency_task_dir = task_dirs_by_id.get(dependency_task_id) if dependency_task_id else None
         structure_path = _resolve_structure_path_for_task(
@@ -71,6 +83,7 @@ def run_pipeline(
             orb_dir=orb_dir,
             notices=notices,
         )
+        _write_run_log(task_log, f"Using structure: {structure_path}")
         build_task_inputs(
             task=task,
             task_dir=task_dir,
@@ -81,6 +94,7 @@ def run_pipeline(
             dependency_task_dir=dependency_task_dir,
             dependency_task_id=dependency_task_id,
         )
+        _write_run_log(task_log, "Generated INPUT, STRU, and KPT files")
         result = run_abacus_task(
             task=task,
             task_dir=task_dir,
@@ -90,12 +104,22 @@ def run_pipeline(
             use_hwthread_cpus=use_hwthread_cpus,
             oversubscribe=oversubscribe,
         )
+        _write_run_log(run_log, f"Finished {task.task_id} with status={result.status}, return_code={result.return_code}")
+        if result.status != "success":
+            _write_run_log(run_log, f"FAILED TASK: {task.task_id} ({task.task_type.value})")
+            _write_run_log(run_log, f"Task log: {result.artifacts.get('run_log', task_log)}")
+            abacus_summary = result.artifacts.get("abacus_error_summary")
+            if abacus_summary:
+                _write_run_log(run_log, "ABACUS error summary:")
+                for line in abacus_summary.splitlines():
+                    _write_run_log(run_log, f"  {line}")
         execution_results.append(result)
         task_dirs_by_id[task.task_id] = task_dir
         structure_paths_by_id[task.task_id] = task_dir / "STRU"
 
     success_count = sum(1 for r in execution_results if r.status == "success")
     summary = f"Executed {len(execution_results)} tasks, success {success_count}, failed {len(execution_results) - success_count}."
+    _write_run_log(run_log, summary)
 
     report_path = write_report(
         query=query,
@@ -105,6 +129,7 @@ def run_pipeline(
         structure_artifact=structure_artifact,
         notices=notices,
     )
+    _write_run_log(run_log, f"Wrote report: {report_path}")
 
     return PipelineResult(
         query=query,
@@ -238,3 +263,10 @@ def _resolve_structure_path_for_task(
         f"No relaxed structure found for dependency {dependency_task_id}; using initial structure for {task.task_id}."
     )
     return generated_stru
+
+
+def _write_run_log(log_path: Path, message: str) -> None:
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now().isoformat(timespec="seconds")
+    with log_path.open("a", encoding="utf-8") as handle:
+        handle.write(f"[{timestamp}] {message}\n")

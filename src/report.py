@@ -21,6 +21,7 @@ def write_report(
         "query": query,
         "structure": None,
         "notices": notices or [],
+        "run_log": str(output_path.parent / "run.log"),
         "tasks": [
             {
                 "task_id": t.task_id,

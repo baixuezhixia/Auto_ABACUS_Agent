@@ -1,5 +1,0 @@
- AUTO_SET NBANDS to 26
- ModuleIO::read_rhog  warning : Can't open file READ_CHG/t4_dos-CHARGE-DENSITY.restart
- Charge::init_rho  warning : Failed to read in charge density from file.
- For initializing atomic charge in calculations,
- please set init_chg to atomic in INPUT.

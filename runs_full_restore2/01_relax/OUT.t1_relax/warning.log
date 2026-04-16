@@ -1,3 +1,0 @@
- smearing_decision  warning : Fixed occupations,gauss broadening ignored
- AUTO_SET gaussian_parameter to 0
- unitcell::read_lattice_constant  warning : do not use LATTICE_VECTORS along with explicit specification of lattice type

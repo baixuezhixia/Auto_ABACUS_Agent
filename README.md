@@ -317,6 +317,7 @@ runs_mp/
     INPUT
     STRU
     KPT
+    run.log
     OUT.t1_relax/
   02_scf/
     INPUT
@@ -335,6 +336,7 @@ runs_mp/
     KPT
     READ_CHG/
     OUT.t4_dos/
+  run.log
   report.json
 ```
 
@@ -347,6 +349,8 @@ runs_mp/
 - Normalized task plan.
 - Per-task execution results.
 - Parsed metrics.
+- `run_log`, the aggregate pipeline log path.
+- Per-task `artifacts.run_log` paths with command, return code, stdout, stderr, and ABACUS `warning.log`/`running_*.log` error details.
 - stdout and stderr tails for debugging failed runs.
 
 ## Current Limitations
@@ -358,5 +362,3 @@ runs_mp/
 - `elastic` is represented as a task and currently generates an ABACUS `scf`-style input with relaxation-related thresholds; a full strain/deformation elastic workflow is not implemented.
 - Both `pw` and `lcao` input generation are wired in; `lcao` still needs broader validation against production ABACUS workflows.
 - Long ABACUS production runs still need normal HPC scheduling, monitoring, and resource management outside this wrapper.
-
-
