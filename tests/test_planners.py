@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import sys
-import types
 import unittest
 from pathlib import Path
 
@@ -16,20 +15,6 @@ from autodft.core.models import TaskNode, WorkflowSpec  # noqa: E402
 from autodft.cli.main import ManualTaskPlanner  # noqa: E402
 from autodft.planners.normalizer import normalize_workflow  # noqa: E402
 from autodft.planners.rule_planner import RulePlanner, infer_task_nodes  # noqa: E402
-
-try:  # noqa: E402
-    import pymatgen.core  # noqa: F401
-except ImportError:  # noqa: E402
-    pymatgen_module = types.ModuleType("pymatgen")
-    pymatgen_core_module = types.ModuleType("pymatgen.core")
-    pymatgen_core_module.Composition = object
-    pymatgen_core_module.Element = object
-    pymatgen_core_module.Structure = object
-    sys.modules.setdefault("pymatgen", pymatgen_module)
-    sys.modules.setdefault("pymatgen.core", pymatgen_core_module)
-
-from pipeline import _resolve_tasks as legacy_resolve_tasks  # noqa: E402
-from schema import TaskType as LegacyTaskType  # noqa: E402
 
 
 def task_types(workflow: WorkflowSpec) -> list[TaskType]:
@@ -139,34 +124,6 @@ class WorkflowNormalizerTests(unittest.TestCase):
         self.assertEqual(task_types(workflow), [TaskType.SCF, TaskType.BANDS])
         self.assertTrue(all(task.basis_type == BasisType.LCAO for task in workflow.tasks))
         self.assertTrue(all(task.params["basis_type"] == "lcao" for task in workflow.tasks))
-
-
-class LegacyTaskPlanningTests(unittest.TestCase):
-    def test_legacy_manual_single_task_relax_propagates_lcao_query_hint(self) -> None:
-        tasks = legacy_resolve_tasks("fully relax the cell with LCAO method", ["relax"], {"mode": "rule"})
-
-        self.assertEqual([task.task_type for task in tasks], [LegacyTaskType.RELAX])
-        self.assertEqual(tasks[0].params["basis_type"], "lcao")
-        self.assertEqual(tasks[0].params["calculation"], "cell-relax")
-
-    def test_legacy_inserted_scf_inherits_lcao_query_hint(self) -> None:
-        tasks = legacy_resolve_tasks("calculate band structure using LCAO method", None, {"mode": "rule"})
-
-        self.assertEqual([task.task_type for task in tasks], [LegacyTaskType.SCF, LegacyTaskType.BANDS])
-        self.assertTrue(all(task.params["basis_type"] == "lcao" for task in tasks))
-
-    def test_legacy_query_order_is_preserved_after_dependency_insertion(self) -> None:
-        tasks = legacy_resolve_tasks(
-            "fully relax the cell with LCAO method, and then calculate its density of states, band structure, and elastic properties",
-            None,
-            {"mode": "rule"},
-        )
-
-        self.assertEqual(
-            [task.task_type for task in tasks],
-            [LegacyTaskType.RELAX, LegacyTaskType.SCF, LegacyTaskType.DOS, LegacyTaskType.BANDS, LegacyTaskType.ELASTIC],
-        )
-        self.assertEqual(tasks[0].params["calculation"], "cell-relax")
 
 
 if __name__ == "__main__":

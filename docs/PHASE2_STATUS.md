@@ -6,8 +6,8 @@ work.
 
 ## Phase 1 Completed
 
-- Introduced the new package layout under `src/autodft/` while leaving the
-  legacy flat `src/` runtime path in place.
+- Introduced the new package layout under `src/autodft/` and retired the
+  legacy flat `src/*.py` runtime path.
 - Added shared core models and enums for workflows, tasks, structures,
   artifacts, execution records, and run summaries.
 - Moved the rule-based planning layer behind planner/normalizer modules that
@@ -68,7 +68,7 @@ work.
 
 ## Verified Capabilities
 
-- New CLI path runs via `PYTHONPATH=src python3 -m autodft.cli.main`.
+- Supported CLI path runs via `PYTHONPATH=src python3 -m autodft.cli.main`.
 - Local CIF input resolves through `local_cif`, converts to STRU, runs SCF, and
   reports convergence and scalar outputs.
 - Local `STRU` and `.stru` inputs resolve through `local_stru` and run through
@@ -95,9 +95,9 @@ work.
 - Unit and integration tests cover planning, structure providers, ABACUS input
   generation, workflow execution, parsers, reports, CLI structure routing, and
   `python -m autodft.cli.main` module invocation.
-- Current full-suite check:
+- Current full-suite check after legacy-path retirement:
   `PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests`
-  passed with 66 tests and 1 expected skip.
+  passed with 59 tests.
 - Real smoke-test reports were inspected under `runs_smoke_local_cif/`,
   `runs_smoke_local_stru/`, and `runs_smoke_local_stru_check/`.
 - Real workflow regressions were validated for minimal PW/LCAO SCF,
@@ -108,7 +108,6 @@ work.
 
 - POSCAR input support.
 - Defect builders and slab builders.
-- Retirement or deletion of the legacy flat `src/` runtime path.
 - A stronger execution-status policy that distinguishes subprocess success,
   ABACUS scientific convergence, warnings, and parser confidence.
 - Dedicated real DFT+U validation of `onsite.dm` handoff.

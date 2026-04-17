@@ -377,7 +377,7 @@ runs_mp/
 - Calculation parameters mostly come from `defaults.calculation`; the agent does not yet infer `ecutwfc`, k-mesh density, smearing, convergence thresholds, or magnetism from the query or material.
 - `elastic` is represented as a task and currently generates an ABACUS `scf`-style input with relaxation-related thresholds; a full strain/deformation elastic workflow is not implemented.
 - Both `pw` and `lcao` input generation are wired in; broader production validation is still needed.
-- The legacy flat runtime path remains in the repository while the new `autodft` package path is validated.
+- The supported runtime entrypoint is `python -m autodft.cli.main`.
 - Long ABACUS production runs still need normal HPC scheduling, monitoring, and resource management outside this wrapper.
 
 ## Validated Examples

@@ -2,7 +2,7 @@
 
 The `src/autodft/core` package defines the first shared vocabulary for the
 phase-1 architecture. These models are intentionally small: they describe the
-workflow shape without migrating the current runtime logic yet.
+workflow shape used by the supported package runtime.
 
 ## Enums
 
@@ -33,8 +33,7 @@ workflow shape without migrating the current runtime logic yet.
 - `RunSummary`: top-level reporting model that connects the workflow plan,
   execution records, notices, final status, and report path.
 
-## Migration Role
+## Runtime Role
 
-These models are not wired into the old codepath yet. They are the target shape
-for future migrations from `schema.py`, `pipeline.py`, `input_builder.py`,
-`abacus_runner.py`, `result_parser.py`, and `report.py`.
+These models are wired into the supported `autodft` package runtime. The
+legacy flat `src/*.py` runtime path has been retired.
