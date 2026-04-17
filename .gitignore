@@ -1,0 +1,26 @@
+# Python bytecode and test caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local environments
+.venv/
+venv/
+env/
+
+# Editor and OS noise
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Generated workflow outputs
+runs/
+runs_*/
+runs-*/
+
+# Keep checked-in examples and fixtures explicit; do not ignore examples/.

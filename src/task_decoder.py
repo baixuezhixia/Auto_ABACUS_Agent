@@ -56,25 +56,9 @@ def _ordered_unique(task_types: List[TaskType]) -> List[TaskType]:
 
 def decode_tasks(query: str) -> List[CalcTask]:
     text = query.strip()
-    detected: List[TaskType] = []
     basis_type = _detect_basis_type(text)
-
-    for ttype, plist in _PATTERNS.items():
-        if _contains_any(text, plist):
-            detected.append(ttype)
-
-    if TaskType.BANDS in detected and TaskType.SCF not in detected:
-        detected.insert(0, TaskType.SCF)
-    if TaskType.DOS in detected and TaskType.SCF not in detected:
-        detected.insert(0, TaskType.SCF)
-
-    if TaskType.ELASTIC in detected:
-        if TaskType.RELAX not in detected:
-            detected.insert(0, TaskType.RELAX)
-        if TaskType.SCF not in detected:
-            detected.insert(1, TaskType.SCF)
-
-    detected = _ordered_unique(detected)
+    full_relax = _detect_full_relax(text)
+    detected = _task_types_by_query_order(text)
 
     if not detected:
         detected = [TaskType.SCF]
@@ -91,7 +75,7 @@ def decode_tasks(query: str) -> List[CalcTask]:
                 task_type=ttype,
                 description=description,
                 depends_on=deps,
-                params=_default_params(ttype, basis_type),
+                params=_default_params(ttype, basis_type, full_relax),
             )
         )
         last_task_id = task_id
@@ -112,10 +96,12 @@ def _default_description(task_type: TaskType) -> str:
 
 
 
-def _default_params(task_type: TaskType, basis_type: str | None = None) -> Dict[str, str]:
+def _default_params(task_type: TaskType, basis_type: str | None = None, full_relax: bool = False) -> Dict[str, str]:
     params: Dict[str, str] = {}
     if basis_type:
         params["basis_type"] = basis_type
+    if task_type == TaskType.RELAX and full_relax:
+        params["calculation"] = "cell-relax"
     if task_type == TaskType.BANDS:
         params["kline_mode"] = "high_symmetry"
     if task_type == TaskType.DOS:
@@ -123,6 +109,22 @@ def _default_params(task_type: TaskType, basis_type: str | None = None) -> Dict[
     if task_type == TaskType.ELASTIC:
         params["strain_set"] = "small_deformation"
     return params
+
+
+
+def _task_types_by_query_order(text: str) -> List[TaskType]:
+    matches = []
+    pattern_order = {task_type: index for index, task_type in enumerate(_PATTERNS)}
+    for task_type, patterns in _PATTERNS.items():
+        positions = [match.start() for pattern in patterns for match in re.finditer(pattern, text, re.IGNORECASE)]
+        if positions:
+            matches.append((min(positions), pattern_order[task_type], task_type))
+    return _ordered_unique([task_type for _, _, task_type in sorted(matches)])
+
+
+
+def _detect_full_relax(text: str) -> bool:
+    return re.search(r"\bfully\s+relax\b", text, re.IGNORECASE) is not None
 
 
 

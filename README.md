@@ -1,17 +1,14 @@
 ﻿# Agent Rebuild
 
-This repository contains an isolated Python prototype for running ABACUS DFT workflows from a natural-language request and a Materials Project structure reference.
+This repository contains an isolated Python prototype for running ABACUS DFT workflows from a natural-language request and either a local structure file or a Materials Project structure reference.
 
-The agent currently:
+The current workflow can:
 
-1. Decodes a user query into an ordered calculation workflow, including the common four-task `relax -> scf -> bands -> dos` flow.
-2. Searches Materials Project by material ID or formula.
-3. Selects a Materials Project entry with deterministic filters and optional LLM ranking.
-4. Downloads a conventional-cell CIF.
-5. Converts the CIF to an ABACUS `STRU`.
-6. Generates one ABACUS task directory per calculation stage.
-7. Runs ABACUS tasks in dependency order.
-8. Parses basic run metrics and writes `report.json`.
+1. Decode a user query into an ordered calculation workflow for `relax`, `scf`, `bands`, `dos`, and `elastic`.
+2. Resolve structures from local `.cif`, local `STRU`/`.stru`, Materials Project material IDs, or Materials Project formulas.
+3. Generate ABACUS `INPUT`, `KPT`, and `STRU` files for PW and LCAO tasks.
+4. Run ABACUS tasks in dependency order with explicit handoff between dependent tasks.
+5. Parse basic run metrics and write `report.json` plus a concise summary.
 
 All generated files are written under the selected `--work-dir`.
 
@@ -33,13 +30,7 @@ Task plans can come from either:
 - An OpenAI-compatible chat-completions API.
 - A manual `--tasks` override.
 
-The workflow is normalized before execution. The common four-task electronic-structure sequence is:
-
-```text
-relax -> scf -> bands -> dos
-```
-
-`elastic` remains an optional fifth task type and is ordered after the electronic-structure tasks when requested.
+The workflow is normalized before execution. Missing dependencies are inserted, but the generated task and folder order preserves the order expressed by the query once dependencies are satisfied.
 
 Dependency rules:
 
@@ -50,12 +41,21 @@ Dependency rules:
 
 The implemented basis modes are `pw` and `lcao`. If the query explicitly mentions either token, that basis hint is propagated into every decoded task. In ABACUS input generation, `lcao` enables the `NUMERICAL_ORBITAL` block and requires configured orbital files.
 
-### Materials Project structure resolution
+Relaxation wording is mapped to ABACUS calculation modes:
 
-`--structure` must be one of:
+- `"fully relax"` generates `calculation cell-relax`.
+- `"relax"` without the full-cell wording generates `calculation relax`.
 
+### Structure resolution
+
+`--structure` may be one of:
+
+- A local CIF file, such as `examples/si_pw/OUT.si_test/STRU.cif`.
+- A local ABACUS structure file named `STRU` or ending in `.stru`.
 - A Materials Project material ID, such as `mp-149`.
 - A formula, such as `Si` or `SiO2`.
+
+Local files take precedence. Non-file inputs fall back to Materials Project resolution.
 
 For material IDs, the agent fetches that exact entry. For formula searches, the agent ranks candidates with:
 
@@ -65,7 +65,7 @@ For material IDs, the agent fetches that exact entry. For formula searches, the 
 - Rule sorting by stability, hull distance, theoretical flag, and material ID.
 - Optional LLM ranking over the hard-filtered shortlist.
 
-The selected conventional structure is downloaded as:
+For Materials Project inputs, the selected conventional structure is downloaded as:
 
 ```text
 <work-dir>/materials_project/<material_id>.cif
@@ -97,8 +97,15 @@ Current generation behavior:
 - `bands` uses a line-mode `KPT` path from `defaults.calculation.kpath`.
 - Other tasks use a Gamma-centered mesh from `defaults.calculation.kmesh`.
 - `bands` and `dos` run as ABACUS `nscf`.
-- `bands` and `dos` stage charge-density restart files from the dependency task into `READ_CHG` when available.
-- If a relaxation dependency produced `OUT.<task_id>/STRU.cif`, downstream tasks use a converted relaxed `STRU`.
+- `relax` and `cell-relax` inputs set `out_stru 1` and `out_chg 0`.
+- `bands`, `dos`, and `elastic` stage SCF charge-density restart files into `READ_CHG` when required.
+- Downstream charge-reuse tasks set `init_chg file` and `read_file_dir READ_CHG`.
+- If a successful relaxation dependency produced `OUT.<task_id>/STRU.cif`, downstream `scf` uses a converted relaxed `STRU`.
+- If a successful `scf` dependency produced structure and charge artifacts, downstream `dos`, `bands`, and `elastic` use those artifacts.
+- Failed upstream dependencies block downstream tasks; the executor does not silently fall back to the original input structure when a valid upstream result is required.
+- `ecutrho` is not emitted by default for PW or LCAO. It is emitted only when explicitly provided by user/config input.
+
+`onsite.dm` is staged for downstream tasks when present in the upstream SCF output. This DFT+U handoff path is covered by tests, but real DFT+U workflow validation is not claimed here.
 
 ### ABACUS execution
 
@@ -160,7 +167,7 @@ abacus:
   orb_dir: "../abacus_data/StandardOrbitals"
 ```
 
-Set your Materials Project API key in either the environment:
+For Materials Project inputs, set your API key in either the environment:
 
 ```bash
 export MP_API_KEY="your_materials_project_key"
@@ -172,10 +179,10 @@ or in `config.yaml`:
 MP_API_KEY: "your_materials_project_key"
 ```
 
-Run a workflow:
+Run a workflow through the new CLI path:
 
 ```bash
-python3 src/main.py \
+PYTHONPATH=src python3 -m autodft.cli.main \
   --query "计算Si的结构弛豫，随后做能带和DOS" \
   --structure Si \
   --work-dir ./runs_mp \
@@ -185,7 +192,7 @@ python3 src/main.py \
 Force the four-task calculation sequence explicitly and bypass query decoding:
 
 ```bash
-python3 src/main.py \
+PYTHONPATH=src python3 -m autodft.cli.main \
   --query "manual run" \
   --structure mp-149 \
   --work-dir ./runs_manual \
@@ -198,7 +205,7 @@ python3 src/main.py \
 Required command-line inputs:
 
 - `--query`: natural-language scientific request.
-- `--structure`: Materials Project material ID or formula.
+- `--structure`: local `.cif`, local `STRU`/`.stru`, Materials Project material ID, or formula.
 
 Optional command-line inputs:
 
@@ -208,7 +215,7 @@ Optional command-line inputs:
 
 Required runtime resources:
 
-- `MP_API_KEY` in `config.yaml` or the environment.
+- `MP_API_KEY` in `config.yaml` or the environment for Materials Project inputs.
 - ABACUS executable available according to `abacus.executable`.
 - Pseudopotential files under `abacus.pseudo_dir`.
 - Orbital files under `abacus.orb_dir` for LCAO workflows.
@@ -231,7 +238,8 @@ defaults:
   calculation:
     basis_type: "pw"
     ecutwfc: 80
-    ecutrho: 640
+    # ecutrho is optional and is emitted only when explicitly configured.
+    # ecutrho: 640
     kmesh: [6, 6, 6]
     smearing_method: "gaussian"
     smearing_sigma: 0.01
@@ -336,14 +344,22 @@ runs_mp/
     KPT
     READ_CHG/
     OUT.t4_dos/
+  05_elastic/
+    INPUT
+    STRU
+    KPT
+    READ_CHG/
+    OUT.t5_elastic/
   run.log
   report.json
+  summary.txt
 ```
 
 `report.json` contains:
 
 - Original query.
-- Selected Materials Project structure.
+- Resolved structure metadata.
+- Selected Materials Project structure when the input used Materials Project resolution.
 - Candidate shortlist and LLM scores when available.
 - Notices from selection, conversion, and dependency handling.
 - Normalized task plan.
@@ -355,10 +371,37 @@ runs_mp/
 
 ## Current Limitations
 
-- Structures are currently sourced only from Materials Project; local CIF or local STRU input is not implemented.
+- POSCAR input, defect builders, and slab builders are not implemented.
 - MP structures are downloaded as conventional cells.
 - Disordered or partial-occupancy CIFs are rejected during CIF-to-STRU conversion.
 - Calculation parameters mostly come from `defaults.calculation`; the agent does not yet infer `ecutwfc`, k-mesh density, smearing, convergence thresholds, or magnetism from the query or material.
 - `elastic` is represented as a task and currently generates an ABACUS `scf`-style input with relaxation-related thresholds; a full strain/deformation elastic workflow is not implemented.
-- Both `pw` and `lcao` input generation are wired in; `lcao` still needs broader validation against production ABACUS workflows.
+- Both `pw` and `lcao` input generation are wired in; broader production validation is still needed.
+- The legacy flat runtime path remains in the repository while the new `autodft` package path is validated.
 - Long ABACUS production runs still need normal HPC scheduling, monitoring, and resource management outside this wrapper.
+
+## Validated Examples
+
+The new CLI path is runnable as:
+
+```bash
+PYTHONPATH=src python3 -m autodft.cli.main ...
+```
+
+Validated workflow examples in the current repository state include:
+
+- Minimal PW `scf`.
+- Minimal LCAO `scf`.
+- `relax -> scf` with the SCF task using the relaxed structure output.
+- Full LCAO workflow with dependency handoff: `relax -> scf -> dos -> elastic -> bands`.
+- Query-order preservation after dependency insertion, including workflows where `dos`, `elastic`, and `bands` are requested in that order.
+
+Example full LCAO workflow:
+
+```bash
+PYTHONPATH=src python3 -m autodft.cli.main \
+  --query "relax the cell with LCAO method, and then calculate its density of states, elastic properties, and band structure" \
+  --structure Si \
+  --work-dir runs_Si_lcao_example \
+  --config config.yaml
+```

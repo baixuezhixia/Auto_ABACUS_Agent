@@ -8,6 +8,9 @@ from schema import CalcTask, TaskType
 
 
 VALID_BASIS_TYPES = {"pw", "lcao"}
+DEFAULT_PW_KS_SOLVER = "cg"
+DEFAULT_LCAO_KS_SOLVER = "genelpa"
+MOVABLE_ATOM_FLAGS = ("1", "1", "1")
 
 
 def build_task_inputs(
@@ -23,7 +26,6 @@ def build_task_inputs(
     task_dir.mkdir(parents=True, exist_ok=True)
 
     ecut = default_cfg.get("ecutwfc", 80)
-    ecutrho = default_cfg.get("ecutrho", int(float(ecut) * 8))
     kmesh = default_cfg.get("kmesh", [6, 6, 6])
     kpath = default_cfg.get("kpath", _default_kpath())
     latname = default_cfg.get("latname", "fcc")
@@ -31,7 +33,6 @@ def build_task_inputs(
     smearing_sigma = default_cfg.get("smearing_sigma", 0.01)
     scf_thr = default_cfg.get("scf_thr", 1e-7)
     scf_nmax = default_cfg.get("scf_nmax", 50)
-    ks_solver = default_cfg.get("ks_solver", "cg")
     nspin = default_cfg.get("nspin", 1)
     symmetry = default_cfg.get("symmetry", 1)
     out_level = default_cfg.get("out_level", "ie")
@@ -39,6 +40,10 @@ def build_task_inputs(
     relax_force_thr = default_cfg.get("relax_force_thr", 0.01)
     stress_thr = default_cfg.get("stress_thr", 10)
     basis_type = _resolve_basis_type(task, default_cfg, orb_dir)
+    ecutrho = _resolve_ecutrho_for_input(default_cfg)
+    ks_solver = _resolve_ks_solver(basis_type, default_cfg)
+    out_stru = _resolve_out_stru_for_task(task.task_type, out_stru)
+    orbital_dir = _resolve_orbital_dir_for_input(basis_type, orb_dir)
     include_numerical_orbital = basis_type == "lcao"
 
     structure_text = structure_path.read_text(encoding="utf-8")
@@ -46,13 +51,14 @@ def build_task_inputs(
     pseudo_map = resolve_pseudo_map(species, pseudo_dir)
     orb_map = resolve_orbital_map(species, orb_dir) if include_numerical_orbital else {}
 
-    calculation = _abacus_calculation(task.task_type)
+    calculation = _abacus_calculation(task)
     is_followup = task.task_type in {TaskType.BANDS, TaskType.DOS}
+    uses_scf_handoff = task.task_type in {TaskType.BANDS, TaskType.DOS, TaskType.ELASTIC}
     init_chg = "file" if is_followup else "atomic"
     if task.task_type == TaskType.BANDS:
         symmetry = 0
     read_file_dir = None
-    if dependency_task_dir is not None and dependency_task_id and is_followup:
+    if dependency_task_dir is not None and dependency_task_id and uses_scf_handoff:
         source_out_dir = dependency_task_dir / f"OUT.{dependency_task_id}"
         read_file_dir = _prepare_read_file_dir(
             task_id=task.task_id,
@@ -69,7 +75,6 @@ def build_task_inputs(
         f"basis_type {basis_type}",
         f"calculation {calculation}",
         f"ecutwfc {ecut}",
-        f"ecutrho {ecutrho}",
         f"scf_thr {scf_thr}",
         f"scf_nmax {scf_nmax}",
         f"ks_solver {ks_solver}",
@@ -78,6 +83,10 @@ def build_task_inputs(
         f"out_level {out_level}",
         f"out_stru {out_stru}",
     ]
+    if ecutrho is not None:
+        input_lines.insert(8, f"ecutrho {ecutrho}")
+    if orbital_dir is not None:
+        input_lines.append(f"orbital_dir {orbital_dir}")
     if "LATTICE_VECTORS" not in structure_text.upper():
         input_lines.append(f"latname {latname}")
 
@@ -85,7 +94,7 @@ def build_task_inputs(
         input_lines.append(f"smearing_method {smearing_method}")
         if smearing_method != "fixed":
             input_lines.append(f"smearing_sigma {smearing_sigma}")
-        input_lines.append("out_chg 1")
+        input_lines.append(f"out_chg {_out_chg_for_task(task.task_type)}")
 
     if task.task_type == TaskType.RELAX:
         input_lines.extend([
@@ -114,6 +123,9 @@ def build_task_inputs(
                 f"dos_emax_ev {default_cfg.get('dos_emax_ev', 15.0)}",
                 f"dos_edelta_ev {default_cfg.get('dos_edelta_ev', 0.01)}",
             ])
+    elif task.task_type == TaskType.ELASTIC and read_file_dir is not None:
+        input_lines.append("init_chg file")
+        input_lines.append(f"read_file_dir {read_file_dir}")
 
     input_content = "\n".join(input_lines) + "\n"
 
@@ -124,6 +136,7 @@ def build_task_inputs(
         pseudo_map,
         orb_map,
         include_numerical_orbital=include_numerical_orbital,
+        atom_coordinate_flags=_atom_coordinate_flags_for_task(task.task_type),
     )
 
     input_path = task_dir / "INPUT"
@@ -145,7 +158,41 @@ def _resolve_basis_type(task: CalcTask, default_cfg: Dict, orb_dir: str) -> str:
     return basis_type
 
 
-def _abacus_calculation(task_type: TaskType) -> str:
+def _resolve_ks_solver(basis_type: str, default_cfg: Dict) -> str:
+    if default_cfg.get("ks_solver"):
+        return str(default_cfg["ks_solver"])
+    if basis_type == "lcao":
+        return DEFAULT_LCAO_KS_SOLVER
+    return DEFAULT_PW_KS_SOLVER
+
+
+def _resolve_ecutrho_for_input(default_cfg: Dict) -> Optional[float]:
+    return default_cfg.get("ecutrho")
+
+
+def _resolve_out_stru_for_task(task_type: TaskType, configured_out_stru) -> int:
+    if task_type == TaskType.RELAX:
+        return 1
+    return configured_out_stru
+
+
+def _out_chg_for_task(task_type: TaskType) -> int:
+    if task_type == TaskType.RELAX:
+        return 0
+    return 1
+
+
+def _resolve_orbital_dir_for_input(basis_type: str, orb_dir: str) -> Optional[str]:
+    if basis_type != "lcao":
+        return None
+    return str(Path(orb_dir).expanduser().resolve())
+
+
+def _abacus_calculation(task: CalcTask) -> str:
+    calculation = task.params.get("calculation")
+    if calculation:
+        return str(calculation)
+    task_type = task.task_type
     if task_type == TaskType.SCF:
         return "scf"
     if task_type == TaskType.RELAX:
@@ -209,6 +256,7 @@ def _render_stru(
     pseudo_map: Dict[str, str],
     orb_map: Dict[str, str],
     include_numerical_orbital: bool,
+    atom_coordinate_flags: Optional[Tuple[str, str, str]] = None,
 ) -> str:
     lines = structure_text.splitlines()
     output: List[str] = []
@@ -253,7 +301,59 @@ def _render_stru(
         for element in species:
             output.append(Path(orb_map[element]).name)
 
+    rendered = "\n".join(output).rstrip() + "\n"
+    if atom_coordinate_flags is not None:
+        rendered = _set_atomic_position_flags(rendered, atom_coordinate_flags)
+    return rendered
+
+
+def _atom_coordinate_flags_for_task(task_type: TaskType) -> Optional[Tuple[str, str, str]]:
+    if task_type == TaskType.RELAX:
+        return MOVABLE_ATOM_FLAGS
+    return None
+
+
+def _set_atomic_position_flags(structure_text: str, flags: Tuple[str, str, str]) -> str:
+    output: List[str] = []
+    in_positions = False
+    for raw_line in structure_text.splitlines():
+        stripped = raw_line.strip()
+        upper = stripped.upper()
+        if upper.startswith("ATOMIC_POSITIONS"):
+            in_positions = True
+            output.append(raw_line)
+            continue
+        if in_positions and upper.startswith(("ATOMIC_SPECIES", "LATTICE", "CELL_PARAMETERS", "K_POINTS", "NUMERICAL_ORBITAL")):
+            in_positions = False
+
+        output.append(_set_coordinate_line_flags(raw_line, flags) if in_positions else raw_line)
     return "\n".join(output).rstrip() + "\n"
+
+
+def _set_coordinate_line_flags(line: str, flags: Tuple[str, str, str]) -> str:
+    stripped = line.strip()
+    if not stripped:
+        return line
+    parts = stripped.split()
+    if len(parts) < 3 or not _looks_like_coordinate(parts[:3]):
+        return line
+
+    rest = parts[6:] if len(parts) >= 6 and _looks_like_move_flags(parts[3:6]) else parts[3:]
+    indent = line[: len(line) - len(line.lstrip())]
+    return indent + " ".join(parts[:3] + list(flags) + rest)
+
+
+def _looks_like_coordinate(parts: List[str]) -> bool:
+    try:
+        for item in parts:
+            float(item)
+    except ValueError:
+        return False
+    return True
+
+
+def _looks_like_move_flags(parts: List[str]) -> bool:
+    return len(parts) == 3 and all(item in {"0", "1"} for item in parts)
 
 
 def _prepare_read_file_dir(task_id: str, source_out_dir: Path, task_dir: Path) -> Optional[str]:
@@ -262,16 +362,23 @@ def _prepare_read_file_dir(task_id: str, source_out_dir: Path, task_dir: Path) -
 
     staging_dir = task_dir / "READ_CHG"
     staging_dir.mkdir(parents=True, exist_ok=True)
+    copied_charge = False
 
     restart_candidates = sorted(source_out_dir.glob("*-CHARGE-DENSITY.restart"))
     if restart_candidates:
         src = restart_candidates[0]
         dst = staging_dir / f"{task_id}-CHARGE-DENSITY.restart"
         dst.write_bytes(src.read_bytes())
+        copied_charge = True
 
     for cube_name in ("chg.cube", "chg1.cube", "chg2.cube"):
         cube_path = source_out_dir / cube_name
         if cube_path.is_file():
             (staging_dir / cube_name).write_bytes(cube_path.read_bytes())
+            copied_charge = True
 
-    return "READ_CHG"
+    onsite_dm = source_out_dir / "onsite.dm"
+    if onsite_dm.is_file():
+        (staging_dir / "onsite.dm").write_bytes(onsite_dm.read_bytes())
+
+    return "READ_CHG" if copied_charge else None

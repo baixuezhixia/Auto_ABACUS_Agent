@@ -143,6 +143,7 @@ def run_pipeline(
 
 
 def _resolve_tasks(query: str, task_plan: Optional[Sequence[str]], decoder_cfg: Dict) -> List[CalcTask]:
+    basis_type = _detect_basis_type(query)
     if task_plan:
         resolved: List[CalcTask] = []
         for idx, name in enumerate(task_plan, start=1):
@@ -154,50 +155,52 @@ def _resolve_tasks(query: str, task_plan: Optional[Sequence[str]], decoder_cfg: 
                     task_type=task_type,
                     description=f"Run {task_type.value}",
                     depends_on=[],
-                    params={},
+                    params=_params_with_basis({}, basis_type),
                 )
             )
-        return _normalize_workflow(resolved)
+        return _normalize_workflow(resolved, query=query)
 
     decoder_mode = str(decoder_cfg.get("mode", "rule")).lower()
     if decoder_mode in {"llm", "auto"}:
         try:
-            return _normalize_workflow(decode_tasks_with_llm(query, decoder_cfg))
+            return _normalize_workflow(decode_tasks_with_llm(query, decoder_cfg), query=query)
         except Exception:
             if decoder_mode == "llm":
                 raise
-    return _normalize_workflow(decode_tasks(query))
+    return _normalize_workflow(decode_tasks(query), query=query)
 
 
-def _normalize_workflow(tasks: Sequence[CalcTask]) -> List[CalcTask]:
-    """Use the physically meaningful ABACUS flow: relax -> scf -> bands/dos."""
-    by_type: Dict[TaskType, CalcTask] = {}
+def _normalize_workflow(tasks: Sequence[CalcTask], *, query: str = "") -> List[CalcTask]:
+    """Complete dependencies while preserving the user's task order."""
+    ordered_sources: List[CalcTask] = []
+    seen: set[TaskType] = set()
     for task in tasks:
-        by_type.setdefault(task.task_type, task)
+        if task.task_type not in seen:
+            seen.add(task.task_type)
+            ordered_sources.append(task)
+    basis_type = _first_basis_type(tasks)
 
-    if (TaskType.BANDS in by_type or TaskType.DOS in by_type or TaskType.ELASTIC in by_type) and TaskType.SCF not in by_type:
-        by_type[TaskType.SCF] = CalcTask(
-            task_id="",
-            task_type=TaskType.SCF,
-            description="Run self-consistent electronic structure calculation",
-            depends_on=[],
-            params={},
+    if not ordered_sources:
+        ordered_sources.append(_legacy_task(TaskType.SCF, basis_type, query))
+
+    present = {task.task_type for task in ordered_sources}
+    if TaskType.ELASTIC in present and TaskType.RELAX not in present:
+        _insert_legacy_before_first(ordered_sources, _legacy_task(TaskType.RELAX, basis_type, query), {TaskType.ELASTIC})
+        present.add(TaskType.RELAX)
+
+    needs_scf = any(task.task_type in {TaskType.BANDS, TaskType.DOS, TaskType.ELASTIC} for task in ordered_sources)
+    if needs_scf and TaskType.SCF not in present:
+        _insert_legacy_before_first(
+            ordered_sources,
+            _legacy_task(TaskType.SCF, basis_type, query),
+            {TaskType.BANDS, TaskType.DOS, TaskType.ELASTIC},
         )
 
-    ordered_types = [
-        TaskType.RELAX,
-        TaskType.SCF,
-        TaskType.BANDS,
-        TaskType.DOS,
-        TaskType.ELASTIC,
-    ]
     normalized: List[CalcTask] = []
     ids_by_type: Dict[TaskType, str] = {}
 
-    for task_type in ordered_types:
-        source = by_type.get(task_type)
-        if source is None:
-            continue
+    for source in ordered_sources:
+        task_type = source.task_type
 
         task_id = f"t{len(normalized) + 1}_{task_type.value}"
         depends_on: List[str] = []
@@ -217,12 +220,75 @@ def _normalize_workflow(tasks: Sequence[CalcTask]) -> List[CalcTask]:
                 task_type=task_type,
                 description=source.description or f"Run {task_type.value}",
                 depends_on=depends_on,
-                params=dict(source.params),
+                params=_params_with_basis_and_relax_mode(source.params, basis_type, task_type, query),
             )
         )
         ids_by_type[task_type] = task_id
 
     return normalized
+
+
+def _legacy_task(task_type: TaskType, basis_type: Optional[str], query: str) -> CalcTask:
+    return CalcTask(
+        task_id="",
+        task_type=task_type,
+        description="Run self-consistent electronic structure calculation" if task_type == TaskType.SCF else f"Run {task_type.value}",
+        depends_on=[],
+        params=_params_with_basis_and_relax_mode({}, basis_type, task_type, query),
+    )
+
+
+def _insert_legacy_before_first(tasks: List[CalcTask], inserted: CalcTask, target_types: set[TaskType]) -> None:
+    for index, task in enumerate(tasks):
+        if task.task_type in target_types:
+            tasks.insert(index, inserted)
+            return
+    tasks.append(inserted)
+
+
+def _first_basis_type(tasks: Sequence[CalcTask]) -> Optional[str]:
+    for task in tasks:
+        basis_type = task.params.get("basis_type")
+        if basis_type:
+            return str(basis_type)
+    return None
+
+
+def _params_with_basis(params: Dict, basis_type: Optional[str]) -> Dict:
+    merged = dict(params)
+    if basis_type is not None:
+        merged.setdefault("basis_type", basis_type)
+    return merged
+
+
+def _params_with_basis_and_relax_mode(params: Dict, basis_type: Optional[str], task_type: TaskType, query: str) -> Dict:
+    merged = _params_with_basis(params, basis_type)
+    if task_type == TaskType.RELAX and _detect_full_relax(query):
+        merged.setdefault("calculation", "cell-relax")
+    return merged
+
+
+def _detect_full_relax(text: str) -> bool:
+    import re
+
+    return re.search(r"\bfully\s+relax\b", text, re.IGNORECASE) is not None
+
+
+def _detect_basis_type(text: str) -> Optional[str]:
+    lowered = text.lower()
+    if _contains_token(lowered, "lcao"):
+        return "lcao"
+    if _contains_token(lowered, "pw"):
+        return "pw"
+    return None
+
+
+def _contains_token(text: str, token: str) -> bool:
+    import re
+
+    token_boundary = r"[A-Za-z0-9_]"
+    pattern = rf"(?<!{token_boundary}){re.escape(token)}(?!{token_boundary})"
+    return re.search(pattern, text, re.IGNORECASE) is not None
 
 
 def _resolve_structure_path_for_task(

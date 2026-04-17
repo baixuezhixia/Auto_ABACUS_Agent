@@ -1,45 +1,26 @@
-﻿abacus:
-  executable: "/usr/local/bin/abacus"
+abacus:
+  executable: "abacus"
   run_mode: "mpirun"  # mpirun or local
-  np: 16
-  use_hwthread_cpus: true
-  oversubscribe: false
-  pseudo_dir: "/home/yukino/TritonDFT-43C7/abacus_data/Pseudopotential"
-  orb_dir: "/home/yukino/TritonDFT-43C7/abacus_data/StandardOrbitals"
-
-defaults:
-  calculation:
-    ecutwfc: 60
-    ecutrho: 480
-    kmesh: [6, 6, 6]
-    latname: "fcc"
-    smearing_method: "fixed"
-    scf_thr: 1e-9
-    scf_nmax: 50
-    ks_solver: "cg"
-    nspin: 1
-    symmetry: 1
-    out_level: "ie"
-    out_chg: 1
-    relax_force_thr: 0.01
-    stress_thr: 10
+  np: 12
+  pseudo_dir: "abacus_resources/Pseudopotential"
+  orbital_dir: "abacus_resources/StandardOrbitals"
 
 decoder:
-  mode: "llm"
+  mode: "llm"   # rule, auto, llm
   model: "deepseek-reasoner"
-  base_url: "https://api.deepseek.com"
-  api_key: "sk-b3065b9ae4854917ae56cb080553f60b"
+  base_url: "https://api.deepseek.com"   # e.g. https://api.openai.com/v1 or an OpenAI-compatible endpoint
+  api_key: ""
   temperature: 0.0
-  timeout: 180
+  timeout: 60
 
 mp_selection:
   hard_limit: 5
   llm:
     enabled: true
-    model: "deepseek-reasoner"
+    model: "deepseek-chat"
     base_url: "https://api.deepseek.com"
-    api_key: "sk-b3065b9ae4854917ae56cb080553f60b"
+    api_key: ""
     temperature: 0.0
-    timeout: 120
+    timeout: 60
 
-MP_API_KEY: "vHFbY1EFbEj0IMvXeI6tyFnc5OY34nMN"
+MP_API_KEY: ""
